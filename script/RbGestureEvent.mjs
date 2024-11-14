@@ -13,7 +13,7 @@
  * 
  * @member {Number} clickTimes 点击次数
  * 
- * @member {Number} startLenght 初始长度
+ * @member {Number} startLenth 初始长度
  * @member {Number} startAngle 初始角度
  * @member {Number} startTime 初始时间
  * 
@@ -30,7 +30,7 @@ class RbEventState {
 
    clickTimes = 0;
 
-   startLenght = 0;
+   startLength = 0;
    startAngle = 0;
    startTime = undefined;
 
@@ -60,8 +60,21 @@ class RbGestureEvent {
     */
    eventRegistry = {};
 
+   /** 
+    * @name debug 
+    * @description 是否开启调试模式
+    * @type {Boolean}
+    * @default false
+    */
    debug = false;
 
+   /**
+    * @name 构造函数
+    * @param {Boolean} debug 是否开启调试模式
+    * @constructor
+    * @returns {RbGestureEvent} - 返回一个RbGestureEvent实例
+    * @description 构造函数
+    */
    constructor(debug = false) {
       this.debug = debug;
       // 监听触摸相关事件
@@ -75,6 +88,39 @@ class RbGestureEvent {
    }
 
    /**
+    * @name 更新上一个事件状态
+    */
+   updateLastEventState() {
+      this.lastEventState = structuredClone(eventState);
+      this.lastEventState.time = new Date;
+   }
+
+   /**
+    * 调用事件
+    * @param {String} elementMark 
+    * @param {Event} event 事件返回
+    */
+   dispatchEvent(elementMark, event) {
+      // 过滤符合条件的事件并执行注册的回调函数
+      const eventInput = structuredClone(this.eventState);
+      eventInput['originEvent'] = event;
+
+      const effectiveList = Object.entries(this.eventConditions).filter(
+         ([key, value]) => (
+            this.eventRegistry.hasOwnProperty(elementMark)
+            && this.eventRegistry[elementMark].hasOwnProperty(key)
+            && value(eventInput, this.lastEventState)
+         )
+      );
+
+      effectiveList.forEach(
+         e => this.eventRegistry[elementMark][e[0]].forEach(
+            f => f(eventInput)
+         )
+      );
+   }
+
+   /**
     * @name 处理触摸开始事件
     * @param {PointerEvent} event 
     */
@@ -82,11 +128,11 @@ class RbGestureEvent {
       const id = event.pointerId;
 
       // 设置事件状态的时间和类型
-      eventState.time = new Date;
-      eventState.eventType = 'down';
+      this.eventState.time = new Date;
+      this.eventState.eventType = 'down';
 
       // 初始化触摸点信息
-      eventState.pointers[id] = {
+      this.eventState.pointers[id] = {
          move: false,
          velocity: [0, 0],
          displacement: [0, 0],
@@ -98,33 +144,33 @@ class RbGestureEvent {
       };
 
       // 处理一个触摸点的情况
-      if (eventState.pointerNum == 0) {
-         eventState.startTime = new Date;
+      if (this.eventState.pointerCount == 0) {
+         this.eventState.startTime = new Date;
       }
 
       // 处理两个及以上触摸点的情况
-      if (eventState.pointerNum == 1) {
+      if (this.eventState.pointerCount == 1) {
          const twoPointerLocation = [
-            [eventState.pointers.values[0].clientX, eventState.pointers.values[0].clientY],
-            [eventState.pointers.values[1].clientX, eventState.pointers.values[1].clientY]
+            [this.eventState.pointers.values[0].clientX, this.eventState.pointers.values[0].clientY],
+            [this.eventState.pointers.values[1].clientX, this.eventState.pointers.values[1].clientY]
          ];
 
          // 计算两点间的初始长度和角度
-         eventState.startLenth = eDistance(twoPointerLocation);
-         eventState.startAngle = angle(twoPointerLocation);
+         this.eventState.startLength = RbGestureEvent.eDistance(twoPointerLocation);
+         this.eventState.startAngle = RbGestureEvent.refAngle(twoPointerLocation);
 
          // 计算两点间的中点
-         eventState.midpoint = mid(twoPointerLocation);
+         this.eventState.midPoint = RbGestureEvent.midPoint(twoPointerLocation);
       }
 
       // 增加触摸点计数
-      eventState.pointerNum += 1;
+      this.eventState.pointerCount += 1;
 
       // 调用事件处理函数
-      dispatchEvent(event.target.mark, event);
+      this.dispatchEvent(event.target.mark, event);
 
       // 更新上一个事件状态
-      updateLastEventState();
+      this.updateLastEventState();
    }
 
    /**
@@ -132,11 +178,11 @@ class RbGestureEvent {
     * @param {PointerEvent} event 
     */
    pointerdarg(event) {
-      if (eventState.pointerNum >= 1) {
+      if (this.eventState.pointerCount >= 1) {
          const id = event.pointerId;
-         const pointer = eventState.pointers[id];
-         eventState.time = new Date;
-         eventState.eventType = 'move';
+         const pointer = this.eventState.pointers[id];
+         this.eventState.time = new Date;
+         this.eventState.eventType = 'move';
 
          /* 如果还在移动就取消清零速度 */
          clearTimeout(pointer.velocityTimeOut);
@@ -150,28 +196,28 @@ class RbGestureEvent {
          pointer.location = [event.clientX, event.clientY];
          pointer.displacement = [event.clientX - pointer.startLocation[0], event.clientY - pointer.startLocation[1]];
 
-         const deltaTime = new Date - lastEventState.time;
+         const deltaTime = new Date - lastthis.EventState.time;
          pointer.velocity = [
-            (pointer.location[0] - lastEventState.pointers[id].location[0]) / deltaTime,
-            (pointer.location[1] - lastEventState.pointers[id].location[1]) / deltaTime,
+            (pointer.location[0] - lastthis.EventState.pointers[id].location[0]) / deltaTime,
+            (pointer.location[1] - lastthis.EventState.pointers[id].location[1]) / deltaTime,
          ];
 
-         if (eventState.pointerNum == 2) {
+         if (this.eventState.pointerCount == 2) {
             const twoPointerLocationg = [
-               [eventState.pointers.values[0].clientX, eventState.pointers.values[0].clientY],
-               [eventState.pointers.values[1].clientX, eventState.pointers.values[1].clientY]
+               [this.eventState.pointers.values[0].clientX, this.eventState.pointers.values[0].clientY],
+               [this.eventState.pointers.values[1].clientX, this.eventState.pointers.values[1].clientY]
             ];
 
-            const nowlenth = eDistance(twoPointerLocationg);
-            const nowangle = angle(twoPointerLocationg);
+            const nowlenth = RbGestureEvent.eDistance(twoPointerLocationg);
+            const nowangle = RbGestureEvent.angle(twoPointerLocationg);
 
-            eventState.scale = nowlenth / eventState.startLenth;
-            eventState.angle = nowangle - eventState.startAngle;
-            eventState.midpoint = mid(twoPointerLocationg);
+            this.eventState.scale = nowlenth / this.eventState.startLenth;
+            this.eventState.angle = nowangle - this.eventState.startAngle;
+            this.eventState.midPoint = RbGestureEvent.mid(twoPointerLocationg);
          }
 
-         dispatchEvent(event.target.mark, event);
-         updateLastEventState();
+         this.dispatchEvent(event.target.mark, event);
+         this.updateLastEventState();
       }
    }
 
@@ -181,12 +227,12 @@ class RbGestureEvent {
     */
    pointerup(event) {
       const id = event.pointerId;
-      eventState.time = new Date;
-      eventState.eventType = 'up';
-      eventState.pointerNum -= 1;
-      delete eventState.pointers[id];
-      dispatchEvent(event.target.mark, event);
-      updateLastEventState();
+      this.eventState.time = new Date;
+      this.eventState.eventType = 'up';
+      this.eventState.pointerCount -= 1;
+      delete this.eventState.pointers[id];
+      this.dispatchEvent(event.target.mark, event);
+      this.updateLastEventState();
    }
 
    /**
@@ -197,13 +243,13 @@ class RbGestureEvent {
     * @returns {void} - 无返回值
     */
    registerEvent(element, eventType, callback) {
-      if (!eventRegistry[element.mark]) {
-         eventRegistry[element.mark] = {};
+      if (!this.eventRegistry[element.mark]) {
+         this.eventRegistry[element.mark] = {};
       }
-      if (!eventRegistry[element.mark][eventType]) {
-         eventRegistry[element.mark][eventType] = [];
+      if (!this.eventRegistry[element.mark][eventType]) {
+         this.eventRegistry[element.mark][eventType] = [];
       }
-      eventRegistry[element.mark][eventType].push(callback);
+      this.eventRegistry[element.mark][eventType].push(callback);
    }
 
    /**
@@ -214,10 +260,9 @@ class RbGestureEvent {
     * @returns {void} - 无返回值
     */
    cancelEvent(element, eventType, callback) {
-      const index = eventRegistry[element.mark][eventType].findIndex(e => e === callback);
-      eventRegistry[element.mark][eventType].splice(index, 1);
+      const index = this.eventRegistry[element.mark][eventType].findIndex(e => e === callback);
+      this.eventRegistry[element.mark][eventType].splice(index, 1);
    }
-
 
 
    /**
@@ -249,7 +294,6 @@ class RbGestureEvent {
     * @returns {Array} - 两点连线的中点坐标
     */
    static midPoint = ([x1, y1], [x2, y2]) => [(x1 - x2) / 2, (y1 - y2) / 2];
-
 }
 
 /**
