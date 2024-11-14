@@ -38,6 +38,37 @@ class RbEventState {
    pointerCount = 0;
 }
 
+/**
+ * @name getElementMark
+ * @description 获取元素标记
+ * @param {HTMLElement} element 元素
+ * @returns {Symbol} - 元素标记
+ * @function
+ * @example
+ * const element = document.querySelector('#mid-box');
+ * const elementMark = getElementMark(element);
+ * console.log(elementMark);
+ * // Symbol(mark)
+ */
+const getElementMark = element => {
+   if (!element.mark) {
+      Object.defineProperty(element, 'mark', {
+         value: Symbol('mark'),
+         writable: true
+      });
+   }
+   return element.mark;
+}
+
+/**
+ * @name RbGestureEvent
+ * @description 手势事件类
+ * @class
+ * @member {RbEventState} eventState 事件状态
+ * @member {RbEventState} lastEventState 上一次事件状态
+ * @member {Object} eventRegistry 事件注册表
+ * @member {Boolean} debug 是否开启调试模式
+ */
 class RbGestureEvent {
    /**
     * @name eventState
@@ -68,6 +99,78 @@ class RbGestureEvent {
     */
    debug = false;
 
+   eventConditions = {
+      'press': (ev, lev) => {
+         return ev.eventType == 'down';
+      },
+      'release': (ev, lev) => {
+         return ev.eventType == 'up';
+      },
+      'click': (ev, lev) => {
+         if (eventConditions['release'](ev, lev) && ev.pointerNum == 0) {
+            return ev.time - ev.startTime <= 500;
+         } else return false;
+      },
+      'doubleclick': (() => {
+         let clickCount = 0;
+         let lastClickTime = new Date;
+         let lastClickLocation = [0, 0];
+         return (ev, lev) => {
+            const pointer = lev.pointers[ev.originEvent.pointerId];
+            if (eventConditions['click'](ev, lev)) {
+               const nowTime = new Date;
+               if (nowTime - lastClickTime <= 550 && ((pointer.location[0] - lastClickLocation[0]) ** 2 + (pointer.location[1] - lastClickLocation[1]) ** 2) <= 400) {
+                  clickCount += 1;
+               } else {
+                  clickCount = 1;
+               }
+               lastClickTime = new Date;
+               lastClickLocation = [...pointer.location];
+            }
+            if (clickCount == 2) {
+               clickCount = 0;
+               return true;
+            } else return false;
+         };
+      })(),
+      'longtouch': (ev, lev) => { },
+
+      'pinch': (ev, lev) => { },
+      'rotate': (ev, lev) => { },
+      'drag': (ev, lev) => { },
+      'move': (ev, lev) => { },
+
+      /* dragEvent */
+      'dragstart': (ev, lev) => { },
+      'dragmove': (ev, lev) => { },
+      'dragend': (ev, lev) => { },
+      'dragcancel': (ev, lev) => { },
+      'dragleft': (ev, lev) => { },
+      'dragright': (ev, lev) => { },
+      'dragup': (ev, lev) => { },
+      'dragdown': (ev, lev) => { },
+
+      /* swipeEvent */
+      'swipeleft': (ev, lev) => { },
+      'swiperight': (ev, lev) => { },
+      'swipeup': (ev, lev) => { },
+      'swipedown': (ev, lev) => { },
+
+      /* pinchEvent */
+      'pinchstart': (ev, lev) => { },
+      'pinchmove': (ev, lev) => { },
+      'pinchend': (ev, lev) => { },
+      'pinchcancel': (ev, lev) => { },
+      'pinchin': (ev, lev) => { },
+      'pinchout': (ev, lev) => { },
+
+      /* rotateEvent */
+      'rotatestart': (ev, lev) => { },
+      'rotatemove': (ev, lev) => { },
+      'rotateend': (ev, lev) => { },
+      'rotatecancel': (ev, lev) => { },
+   };
+
    /**
     * @name 构造函数
     * @param {Boolean} debug 是否开启调试模式
@@ -78,13 +181,17 @@ class RbGestureEvent {
    constructor(debug = false) {
       this.debug = debug;
       // 监听触摸相关事件
-      [
-         ['pointerdown', pointerdown],
-         ['pointermove', pointerdarg],
-         ['pointerup', pointerup],
-      ].forEach(n => window.addEventListener(n[0], n[1], true));
+      document.addEventListener('DOMContentLoaded', () => {
+         [
+            ['pointerdown', pointerdown],
+            ['pointermove', pointerdarg],
+            ['pointerup', pointerup],
+         ].forEach(n => window.addEventListener(n[0], n[1], true));
+      });
 
-      console.log('loading RbGestureListener');
+      if (this.debug) {
+         console.log('loading RbGestureListener');
+      }
    }
 
    /**
@@ -243,13 +350,14 @@ class RbGestureEvent {
     * @returns {void} - 无返回值
     */
    registerEvent(element, eventType, callback) {
-      if (!this.eventRegistry[element.mark]) {
-         this.eventRegistry[element.mark] = {};
+      const elementMark = getElementMark(element);
+      if (!this.eventRegistry[elementMark]) {
+         this.eventRegistry[elementMark] = {};
       }
-      if (!this.eventRegistry[element.mark][eventType]) {
-         this.eventRegistry[element.mark][eventType] = [];
+      if (!this.eventRegistry[elementMark][eventType]) {
+         this.eventRegistry[elementMark][eventType] = [];
       }
-      this.eventRegistry[element.mark][eventType].push(callback);
+      this.eventRegistry[elementMark][eventType].push(callback);
    }
 
    /**
@@ -260,8 +368,9 @@ class RbGestureEvent {
     * @returns {void} - 无返回值
     */
    cancelEvent(element, eventType, callback) {
-      const index = this.eventRegistry[element.mark][eventType].findIndex(e => e === callback);
-      this.eventRegistry[element.mark][eventType].splice(index, 1);
+      const elementMark = getElementMark(element);
+      const index = this.eventRegistry[elementMark][eventType].findIndex(e => e === callback);
+      this.eventRegistry[elementMark][eventType].splice(index, 1);
    }
 
 
@@ -335,4 +444,4 @@ const AntiShake = function (func, time) {
    }
 };
 
-export { RbGestureEvent as RbGestureListener, Throttle, AntiShake };
+export { RbGestureEvent, Throttle, AntiShake };
