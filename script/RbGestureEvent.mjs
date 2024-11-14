@@ -38,7 +38,7 @@ class RbEventState {
    pointerCount = 0;
 }
 
-class RbGestureListener {
+class RbGestureEvent {
    /**
     * @name eventState
     * @description 事件状态
@@ -291,4 +291,4 @@ const AntiShake = function (func, time) {
    }
 };
 
-export { RbGestureListener, Throttle, AntiShake };
+export { RbGestureEvent as RbGestureListener, Throttle, AntiShake };
