@@ -38,16 +38,9 @@ class RbEventState {
    pointerCount = 0;
 }
 
-/**
- * @name _eventList_s
- * @description 事件列表符号
- * @type {Symbol}
- * @private
- * @default Symbol('eventList')
- * @readonly
- */
-const _EVENTLIST = Symbol('eventList');
-const _LONGTOUCH = Symbol('longtouch');
+
+const EVENTLIST = Symbol('eventList');
+const LONGTOUCH = Symbol('longtouch');
 
 /**
  * @name eventConditions
@@ -354,18 +347,18 @@ class RbGestureEvent {
       if (this.debug) {
          console.log(`register event: ${type} on ${element}`);
       } else {
-         if (!element[_EVENTLIST]) {
-            element[_EVENTLIST] = {};
+         if (!element[EVENTLIST]) {
+            element[EVENTLIST] = {};
             element.addEventListener('pointerdown', RbGestureEvent.downdispatch, true);
             element.addEventListener('pointermove', RbGestureEvent.movedispatch, true);
             element.addEventListener('pointerup', RbGestureEvent.updispatch, true);
          }
-         if (!element[_EVENTLIST][type]) {
-            element[_EVENTLIST][type] = [];
+         if (!element[EVENTLIST][type]) {
+            element[EVENTLIST][type] = [];
          }
 
          callback = callback.bind(element);
-         element[_EVENTLIST][type].push(callback);
+         element[EVENTLIST][type].push(callback);
       }
    }
 
@@ -380,7 +373,7 @@ class RbGestureEvent {
       if (this.debug) {
          console.log(`cancel event: ${type} on ${element}`);
       } else {
-         const list = element[_EVENTLIST][type];
+         const list = element[EVENTLIST][type];
          const index = list.indexOf(callback);
          if (index != -1) {
             list.splice(index, 1);
@@ -390,27 +383,32 @@ class RbGestureEvent {
       }
    }
 
-   static downdispatch = event => {
+   /**
+    * @name downdispatch
+    * @description 按下事件分发器
+    * @param {PointerEvent} event - 事件 
+    */
+   static downdispatch = () => {
       RbGestureEvent.dispatchEvent(this);
-      /*  因为长按固定在按下后0.5秒触发，所以使用setTimeout
-       *  如果需要更加精确区分不同时长的长按事件，请使用setInterval
-       */
-      this[_LONGTOUCH] = settimeout(() => {
-         RbGestureEvent.longtouchdispatch(event);
-      }, 500);
+      if (RbGestureEvent.eventState.pointerCount == 1)
+         this[LONGTOUCH] = setInterval(() => {
+            RbGestureEvent.longtouchdispatch();
+         }, 100);
+      else if (this[LONGTOUCH])
+         clearInterval(this[LONGTOUCH]);
    }
 
-   static longtouchdispatch = event => {
+   static longtouchdispatch = () => {
       RbGestureEvent.dispatchEvent(this);
    }
 
-   static movedispatch = event => {
+   static movedispatch = () => {
       RbGestureEvent.dispatchEvent(this);
    }
 
-   static updispatch = event => {
+   static updispatch = () => {
       RbGestureEvent.dispatchEvent(this);
-      clearInterval(this[_LONGTOUCH]);
+      clearInterval(this[LONGTOUCH]);
    }
 
    /**
@@ -419,8 +417,9 @@ class RbGestureEvent {
     * @param {HTMLElement} element - 元素
     */
    static dispatchEvent(element) {
-      const keys = Object.keys(element[_EVENTLIST]);
+      const keys = Object.keys(element[EVENTLIST]);
       let activeQueue = keys.filter(type => {
+         // 执行eventConditions中对应的条件函数
          return eventConditions[type](RbGestureEvent.eventState, RbGestureEvent.lastEventState);
       });
       activeQueue.forEach(
@@ -460,15 +459,9 @@ class RbGestureEvent {
    static midPoint = ([x1, y1], [x2, y2]) => [(x1 - x2) / 2, (y1 - y2) / 2];
 }
 
-/**
- * @name _tiking
- * @description 节流标记符号
- * @type {Symbol}
- * @private
- * @default Symbol('tiking')
- * @readonly
- */
-const _tiking = Symbol('tiking');
+
+const TIKING = Symbol('tiking');
+const ANTITIMER = Symbol('antitimer');
 
 /**
  * 代码节流，会返回将输入函数修饰成节流函数
@@ -478,15 +471,15 @@ const _tiking = Symbol('tiking');
  */
 const Throttle = function (func) {
    /* 为函数分配一个tiking属性，方便之后实现节流 */
-   Object.defineProperty(func, _tiking, { value: false, writable: true });
+   Object.defineProperty(func, TIKING, { value: false, writable: true });
 
    return function (...arg) {
-      if (!func[_tiking]) {
+      if (!func[TIKING]) {
          requestAnimationFrame(() => {
             func(...arg);
-            func[_tiking] = false;
+            func[TIKING] = false;
          });
-         func[_tiking] = true;
+         func[TIKING] = true;
       }
    }
 }
@@ -500,10 +493,10 @@ const Throttle = function (func) {
  * @returns {Function} -修饰成防抖函数的func
  */
 const AntiShake = function (func, time) {
-   Object.defineProperty(func, _tiking, { writable: true });
+   Object.defineProperty(func, ANTITIMER, { writable: true });
    return function (...arg) {
-      clearTimeout(func[_tiking]);
-      func[_tiking] = setTimeout(() => func(...arg), time);
+      clearTimeout(func[ANTITIMER]);
+      func[ANTITIMER] = setTimeout(() => func(...arg), time);
    }
 };
 

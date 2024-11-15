@@ -11,7 +11,7 @@ import { RbGestureEvent } from './RbGestureEvent.mjs';
 const main = event => {
    console.log('loading main.js');
 
-   const button = document.querySelector('#mid-box');
+   const button = document.querySelector('#mid-in');
 
    const gesture = new RbGestureEvent(true);
    gesture.registerEvent(button, 'click', event => {
