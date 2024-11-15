@@ -53,19 +53,21 @@ class EventState {
 /**
  * @name eventConditions
  * @description 事件条件对象，包含用于判断各种事件类型的条件函数
- * @type {Record<String, (ev: EventState, lev: EventState) => Boolean>}
+ * @type {Record<String, (ev: EventState, lev: EventState, tri: String) => Boolean>}
  * @private
  * @constant
  */
 const eventConditions = {
-   'press': (ev, lev) => {
-      return ev.eventType == 'down';
+   'press': (ev, lev, tri) => {
+      const isDown = ev.eventType == 'down' && tri == 'down';
+      return isDown;
    },
-   'release': (ev, lev) => {
-      return ev.eventType == 'up';
+   'release': (ev, lev, tri) => {
+      const isUp = ev.eventType == 'up' && tri == 'up';
+      return isUp;
    },
-   'click': (ev, lev) => {
-      if (eventConditions['release'](ev, lev) && ev.pointerCount == 0) {
+   'click': (ev, lev, tri) => {
+      if (eventConditions['release'](ev, lev, tri) && ev.pointerCount == 0) {
          return ev.time - ev.startTime <= 500;
       } else return false;
    },
@@ -73,9 +75,9 @@ const eventConditions = {
       let clickCount = 0;
       let lastClickTime = new Date;
       let lastClickLocation = [0, 0];
-      return (ev, lev) => {
+      return (ev, lev, tri) => {
          const pointer = lev.pointers[ev.originEvent.pointerId];
-         if (eventConditions['click'](ev, lev)) {
+         if (eventConditions['click'](ev, lev, tri)) {
             const nowTime = new Date;
             if (nowTime - lastClickTime <= 550 && ((pointer.location[0] - lastClickLocation[0]) ** 2 + (pointer.location[1] - lastClickLocation[1]) ** 2) <= 400) {
                clickCount += 1;
@@ -91,42 +93,42 @@ const eventConditions = {
          } else return false;
       };
    })(),
-   'longtouch': (ev, lev) => { },
+   'longtouch': (ev, lev, tri) => { },
 
-   'pinch': (ev, lev) => { },
-   'rotate': (ev, lev) => { },
-   'drag': (ev, lev) => { },
-   'move': (ev, lev) => { },
+   'pinch': (ev, lev, tri) => { },
+   'rotate': (ev, lev, tri) => { },
+   'drag': (ev, lev, tri) => { },
+   'move': (ev, lev, tri) => { },
 
    /* dragEvent */
-   'dragstart': (ev, lev) => { },
-   'dragmove': (ev, lev) => { },
-   'dragend': (ev, lev) => { },
-   'dragcancel': (ev, lev) => { },
-   'dragleft': (ev, lev) => { },
-   'dragright': (ev, lev) => { },
-   'dragup': (ev, lev) => { },
-   'dragdown': (ev, lev) => { },
+   'dragstart': (ev, lev, tri) => { },
+   'dragmove': (ev, lev, tri) => { },
+   'dragend': (ev, lev, tri) => { },
+   'dragcancel': (ev, lev, tri) => { },
+   'dragleft': (ev, lev, tri) => { },
+   'dragright': (ev, lev, tri) => { },
+   'dragup': (ev, lev, tri) => { },
+   'dragdown': (ev, lev, tri) => { },
 
    /* swipeEvent */
-   'swipeleft': (ev, lev) => { },
-   'swiperight': (ev, lev) => { },
-   'swipeup': (ev, lev) => { },
-   'swipedown': (ev, lev) => { },
+   'swipeleft': (ev, lev, tri) => { },
+   'swiperight': (ev, lev, tri) => { },
+   'swipeup': (ev, lev, tri) => { },
+   'swipedown': (ev, lev, tri) => { },
 
    /* pinchEvent */
-   'pinchstart': (ev, lev) => { },
-   'pinchmove': (ev, lev) => { },
-   'pinchend': (ev, lev) => { },
-   'pinchcancel': (ev, lev) => { },
-   'pinchin': (ev, lev) => { },
-   'pinchout': (ev, lev) => { },
+   'pinchstart': (ev, lev, tri) => { },
+   'pinchmove': (ev, lev, tri) => { },
+   'pinchend': (ev, lev, tri) => { },
+   'pinchcancel': (ev, lev, tri) => { },
+   'pinchin': (ev, lev, tri) => { },
+   'pinchout': (ev, lev, tri) => { },
 
    /* rotateEvent */
-   'rotatestart': (ev, lev) => { },
-   'rotatemove': (ev, lev) => { },
-   'rotateend': (ev, lev) => { },
-   'rotatecancel': (ev, lev) => { },
+   'rotatestart': (ev, lev, tri) => { },
+   'rotatemove': (ev, lev, tri) => { },
+   'rotateend': (ev, lev, tri) => { },
+   'rotatecancel': (ev, lev, tri) => { },
 };
 
 /**
@@ -181,11 +183,11 @@ class GestureEvent {
 
    /** @description 更新事件状态 */
    updateState(event) {
-      EventState.lastEventState = structuredClone(eventState);
-      EventState.lastEventState.time = new Date;
+      GestureEvent.lastEventState = structuredClone(GestureEvent.eventState);
+      GestureEvent.lastEventState.time = new Date;
 
-      EventState.outEventState = structuredClone(eventState);
-      EventState.outEventState['originEvent'] = event;
+      GestureEvent.outEventState = structuredClone(GestureEvent.eventState);
+      GestureEvent.outEventState['originEvent'] = event;
    }
 
    /**
@@ -219,17 +221,23 @@ class GestureEvent {
 
       // 处理两个及以上触摸点的情况
       if (eventState.pointerCount == 1) {
-         const twoPointerLocation = [
-            [eventState.pointers.values[0].clientX, eventState.pointers.values[0].clientY],
-            [eventState.pointers.values[1].clientX, eventState.pointers.values[1].clientY]
-         ];
+         try {
+            const twoPointerLocation = [
+               [eventState.pointers.values[0].clientX, eventState.pointers.values[0].clientY],
+               [eventState.pointers.values[1].clientX, eventState.pointers.values[1].clientY]
+            ];
 
-         // 计算两点间的初始长度和角度
-         eventState.startLength = GestureEvent.eDistance(twoPointerLocation);
-         eventState.startAngle = GestureEvent.refAngle(twoPointerLocation);
+            // 计算两点间的初始长度和角度
+            eventState.startLength = GestureEvent.eDistance(twoPointerLocation);
+            eventState.startAngle = GestureEvent.refAngle(twoPointerLocation);
 
-         // 计算两点间的中点
-         eventState.midPoint = GestureEvent.midPoint(twoPointerLocation);
+            // 计算两点间的中点
+            eventState.midPoint = GestureEvent.midPoint(twoPointerLocation);
+         }
+
+         catch (error) {
+            console.log(eventState);
+         }
       }
 
       // 增加触摸点计数
@@ -248,6 +256,7 @@ class GestureEvent {
       if (eventState.pointerCount >= 1) {
          const id = event.pointerId;
          const pointer = eventState.pointers[id];
+
          eventState.time = new Date;
          eventState.eventType = 'move';
 
@@ -280,7 +289,7 @@ class GestureEvent {
 
             eventState.scale = nowlenth / eventState.startLength;
             eventState.refAngle = nowangle - eventState.startAngle;
-            eventState.midPoint = GestureEvent.mid(twoPointerLocationg);
+            eventState.midPoint = GestureEvent.midPoint(twoPointerLocationg);
          }
 
          this.updateState(event);
@@ -316,6 +325,7 @@ class GestureEvent {
          element.addEventListener('pointerdown', GestureEvent.downdispatch, true);
          element.addEventListener('pointermove', GestureEvent.movedispatch, true);
          element.addEventListener('pointerup', GestureEvent.updispatch, true);
+         element.addEventListener('pointerout', GestureEvent.outdispatch, true);
       }
       if (!element[EVENTLIST][type]) {
          element[EVENTLIST][type] = [];
@@ -368,6 +378,7 @@ class GestureEvent {
                element.removeEventListener('pointerdown', GestureEvent.downdispatch, true);
                element.removeEventListener('pointermove', GestureEvent.movedispatch, true);
                element.removeEventListener('pointerup', GestureEvent.updispatch, true);
+               element.removeEventListener('pointerout', GestureEvent.outdispatch, true);
             }
          }
 
@@ -385,28 +396,34 @@ class GestureEvent {
    static downdispatch() {
       // if (debug) console.log('down');
 
-      GestureEvent.dispatchEvent(this);
+      GestureEvent.dispatchEvent(this, 'down');
       if (GestureEvent.eventState.pointerCount == 1)
          this[LONGTOUCH] = setInterval(() => {
-            GestureEvent.longtouchdispatch();
+            GestureEvent.longtouchdispatch(this);
          }, 100);
       else if (this[LONGTOUCH])
          clearInterval(this[LONGTOUCH]);
    }
 
-   static longtouchdispatch() {
-      if (debug) console.log('longtouch');
-      GestureEvent.dispatchEvent(this);
+   static longtouchdispatch(element) {
+      // if (debug) console.log('longtouch');
+      GestureEvent.dispatchEvent(element, 'longtouch');
    }
 
    static movedispatch() {
       // if (debug) console.log('move');
-      GestureEvent.dispatchEvent(this);
+      if (GestureEvent.eventState.pointerCount >= 1)
+         GestureEvent.dispatchEvent(this, 'move');
    }
 
    static updispatch() {
       // if (debug) console.log('up');
-      GestureEvent.dispatchEvent(this);
+      GestureEvent.dispatchEvent(this, 'up');
+      clearInterval(this[LONGTOUCH]);
+   }
+
+   static outdispatch() {
+      // if (debug) console.log('out');
       clearInterval(this[LONGTOUCH]);
    }
 
@@ -414,12 +431,13 @@ class GestureEvent {
     * @name dispatchEvent
     * @description 筛选符合触发条件的事件并执行
     * @param {HTMLElement} element - 元素
+    * @param {String} trigger - 触发器, 用于筛选符合触发条件的事件
     */
-   static dispatchEvent(element) {
+   static dispatchEvent(element, trigger) {
       const keys = Object.keys(element[EVENTLIST]);
       let activeQueue = keys.filter(type => {
          // 执行eventConditions中对应的条件函数
-         return eventConditions[type](GestureEvent.eventState, GestureEvent.lastEventState);
+         return eventConditions[type](GestureEvent.eventState, GestureEvent.lastEventState, trigger);
       });
       if (activeQueue.length != 0)
          activeQueue.forEach(
@@ -459,4 +477,4 @@ class GestureEvent {
    static midPoint = ([x1, y1], [x2, y2]) => [(x1 - x2) / 2, (y1 - y2) / 2];
 }
 
-export { GestureEvent as RbGestureEvent };
+export { GestureEvent as RbGestureEvent, EventState as RbEventState };
