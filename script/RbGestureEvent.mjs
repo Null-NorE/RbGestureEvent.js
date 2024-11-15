@@ -31,6 +31,8 @@ const CBMAPPING = Symbol('callbackMapping');
  * 
  * @member {Array} pointers 指针
  * @member {Number} pointerCount 指针数量
+ * 
+ * @member {Event} originEvent 原始事件
  */
 class EventState {
    time = undefined;
@@ -47,7 +49,10 @@ class EventState {
    startTime = undefined;
 
    pointers = [];
+   upponiterId = -1;
    pointerCount = 0;
+
+   originEvent = undefined;
 }
 
 /**
@@ -73,24 +78,26 @@ const eventConditions = {
    },
    'doubleclick': (() => {
       let clickCount = 0;
-      let lastClickTime = new Date;
+      let lastClickTime = new Date(1970); // 避免第一次点击时的时间判断出错
       let lastClickLocation = [0, 0];
       return (ev, lev, tri) => {
-         const pointer = lev.pointers[ev.originEvent.pointerId];
-         if (eventConditions['click'](ev, lev, tri)) {
-            const nowTime = new Date;
-            if (nowTime - lastClickTime <= 550 && ((pointer.location[0] - lastClickLocation[0]) ** 2 + (pointer.location[1] - lastClickLocation[1]) ** 2) <= 400) {
-               clickCount += 1;
-            } else {
-               clickCount = 1;
+         if (tri == 'up') {
+            const pointer = lev.pointers[ev.upponiterId];
+            if (eventConditions['click'](ev, lev, tri)) {
+               const nowTime = new Date;
+               if (nowTime - lastClickTime <= 550 && GestureEvent.eDistance(pointer.location, lastClickLocation) <= 20) {
+                  clickCount += 1;
+               } else {
+                  clickCount = 1;
+               }
+               lastClickTime = new Date;
+               lastClickLocation = [...pointer.location];
             }
-            lastClickTime = new Date;
-            lastClickLocation = [...pointer.location];
+            if (clickCount == 2) {
+               clickCount = 0;
+               return true;
+            } else return false;
          }
-         if (clickCount == 2) {
-            clickCount = 0;
-            return true;
-         } else return false;
       };
    })(),
    'longtouch': (ev, lev, tri) => { },
@@ -181,13 +188,22 @@ class GestureEvent {
       }
    }
 
-   /** @description 更新事件状态 */
+   /** 
+    * @description 更新事件状态
+    * @param {PointerEvent} event - 事件
+    */
    updateState(event) {
+      event = GestureEvent.eventState.originEvent
+      GestureEvent.eventState.originEvent = null;
+
       GestureEvent.lastEventState = structuredClone(GestureEvent.eventState);
       GestureEvent.lastEventState.time = new Date;
+      GestureEvent.lastEventState.originEvent = event;
 
       GestureEvent.outEventState = structuredClone(GestureEvent.eventState);
-      GestureEvent.outEventState['originEvent'] = event;
+      GestureEvent.outEventState.originEvent = event;
+
+      GestureEvent.eventState.originEvent = event;
    }
 
    /**
@@ -195,8 +211,12 @@ class GestureEvent {
     * @param {PointerEvent} event 
     */
    pointerdown = (event) => {
+      this.updateState();
+
       const id = event.pointerId;
       const eventState = GestureEvent.eventState;
+
+      eventState.originEvent = event;
 
       // 设置事件状态的时间和类型
       eventState.time = new Date;
@@ -221,28 +241,21 @@ class GestureEvent {
 
       // 处理两个及以上触摸点的情况
       if (eventState.pointerCount == 1) {
-         try {
-            const twoPointerLocation = [
-               [eventState.pointers.values[0].clientX, eventState.pointers.values[0].clientY],
-               [eventState.pointers.values[1].clientX, eventState.pointers.values[1].clientY]
-            ];
+         const twoPointerLocation = [
+            [eventState.pointers.values[0].clientX, eventState.pointers.values[0].clientY],
+            [eventState.pointers.values[1].clientX, eventState.pointers.values[1].clientY]
+         ];
 
-            // 计算两点间的初始长度和角度
-            eventState.startLength = GestureEvent.eDistance(twoPointerLocation);
-            eventState.startAngle = GestureEvent.refAngle(twoPointerLocation);
+         // 计算两点间的初始长度和角度
+         eventState.startLength = GestureEvent.eDistance(twoPointerLocation);
+         eventState.startAngle = GestureEvent.refAngle(twoPointerLocation);
 
-            // 计算两点间的中点
-            eventState.midPoint = GestureEvent.midPoint(twoPointerLocation);
-         }
-
-         catch (error) {
-            console.log(eventState);
-         }
+         // 计算两点间的中点
+         eventState.midPoint = GestureEvent.midPoint(twoPointerLocation);
       }
 
       // 增加触摸点计数
       eventState.pointerCount += 1;
-      this.updateState(event);
    }
 
    /**
@@ -250,8 +263,12 @@ class GestureEvent {
     * @param {PointerEvent} event 
     */
    pointermove = (event) => {
+      this.updateState();
+
       const eventState = GestureEvent.eventState;
       const lastEventState = GestureEvent.lastEventState;
+
+      eventState.originEvent = event;
 
       if (eventState.pointerCount >= 1) {
          const id = event.pointerId;
@@ -291,8 +308,6 @@ class GestureEvent {
             eventState.refAngle = nowangle - eventState.startAngle;
             eventState.midPoint = GestureEvent.midPoint(twoPointerLocationg);
          }
-
-         this.updateState(event);
       }
    }
 
@@ -301,14 +316,19 @@ class GestureEvent {
     * @param {PointerEvent} event 
     */
    pointerup = (event) => {
+      this.updateState();
+
+      const eventState = GestureEvent.eventState;
+      eventState.originEvent = event;
+      
       const id = event.pointerId;
-      delete GestureEvent.eventState.pointers[id];
+      eventState.upponiterId = id;
+      delete eventState.pointers[id];
 
-      GestureEvent.eventState.time = new Date;
-      GestureEvent.eventState.eventType = 'up';
-      GestureEvent.eventState.pointerCount -= 1;
+      eventState.time = new Date;
+      eventState.eventType = 'up';
+      eventState.pointerCount -= 1;
 
-      this.updateState(event);
    }
 
    /**
