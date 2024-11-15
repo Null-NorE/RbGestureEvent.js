@@ -39,26 +39,94 @@ class RbEventState {
 }
 
 /**
- * @name getElementMark
- * @description 获取元素标记
- * @param {HTMLElement} element 元素
- * @returns {Symbol} - 元素标记
- * @function
- * @example
- * const element = document.querySelector('#mid-box');
- * const elementMark = getElementMark(element);
- * console.log(elementMark);
- * // Symbol(mark)
+ * @name _eventList_s
+ * @description 事件列表符号
+ * @type {Symbol}
+ * @private
+ * @default Symbol('eventList')
+ * @readonly
  */
-const getElementMark = element => {
-   if (!element.mark) {
-      Object.defineProperty(element, 'mark', {
-         value: Symbol('mark'),
-         writable: true
-      });
-   }
-   return element.mark;
-}
+const _EVENTLIST = Symbol('eventList');
+const _LONGTOUCH = Symbol('longtouch');
+
+/**
+ * @name eventConditions
+ * @description 事件条件对象，包含用于判断各种事件类型的条件函数
+ * @type {Record<String, (ev: RbEventState, lev: RbEventState) => Boolean>}
+ * @private
+ * @constant
+ */
+const eventConditions = {
+   'press': (ev, lev) => {
+      return ev.eventType == 'down';
+   },
+   'release': (ev, lev) => {
+      return ev.eventType == 'up';
+   },
+   'click': (ev, lev) => {
+      if (eventConditions['release'](ev, lev) && ev.pointerNum == 0) {
+         return ev.time - ev.startTime <= 500;
+      } else return false;
+   },
+   'doubleclick': (() => {
+      let clickCount = 0;
+      let lastClickTime = new Date;
+      let lastClickLocation = [0, 0];
+      return (ev, lev) => {
+         const pointer = lev.pointers[ev.originEvent.pointerId];
+         if (eventConditions['click'](ev, lev)) {
+            const nowTime = new Date;
+            if (nowTime - lastClickTime <= 550 && ((pointer.location[0] - lastClickLocation[0]) ** 2 + (pointer.location[1] - lastClickLocation[1]) ** 2) <= 400) {
+               clickCount += 1;
+            } else {
+               clickCount = 1;
+            }
+            lastClickTime = new Date;
+            lastClickLocation = [...pointer.location];
+         }
+         if (clickCount == 2) {
+            clickCount = 0;
+            return true;
+         } else return false;
+      };
+   })(),
+   'longtouch': (ev, lev) => { },
+
+   'pinch': (ev, lev) => { },
+   'rotate': (ev, lev) => { },
+   'drag': (ev, lev) => { },
+   'move': (ev, lev) => { },
+
+   /* dragEvent */
+   'dragstart': (ev, lev) => { },
+   'dragmove': (ev, lev) => { },
+   'dragend': (ev, lev) => { },
+   'dragcancel': (ev, lev) => { },
+   'dragleft': (ev, lev) => { },
+   'dragright': (ev, lev) => { },
+   'dragup': (ev, lev) => { },
+   'dragdown': (ev, lev) => { },
+
+   /* swipeEvent */
+   'swipeleft': (ev, lev) => { },
+   'swiperight': (ev, lev) => { },
+   'swipeup': (ev, lev) => { },
+   'swipedown': (ev, lev) => { },
+
+   /* pinchEvent */
+   'pinchstart': (ev, lev) => { },
+   'pinchmove': (ev, lev) => { },
+   'pinchend': (ev, lev) => { },
+   'pinchcancel': (ev, lev) => { },
+   'pinchin': (ev, lev) => { },
+   'pinchout': (ev, lev) => { },
+
+   /* rotateEvent */
+   'rotatestart': (ev, lev) => { },
+   'rotatemove': (ev, lev) => { },
+   'rotateend': (ev, lev) => { },
+   'rotatecancel': (ev, lev) => { },
+};
 
 /**
  * @name RbGestureEvent
@@ -71,25 +139,31 @@ const getElementMark = element => {
  */
 class RbGestureEvent {
    /**
-    * @name eventState
     * @description 事件状态
     * @type {RbEventState}
+    * @private
     */
-   eventState = new RbEventState();
+   static eventState = new RbEventState;
 
    /**
-    * @name lastEventState
     * @description 上一次事件状态
     * @type {RbEventState}
+    * @private
     */
-   lastEventState = new RbEventState();
+   static lastEventState = new RbEventState;
+
+   /**
+    * @description 输出事件状态
+    * @type {RbEventState}
+    */
+   static outEventState = new RbEventState;
 
    /**
     * @name eventRegistry
     * @description 事件注册表
-    * @type {Object}
+    * @type {WeakMap}
     */
-   eventRegistry = {};
+   eventRegistry = new WeakMap;
 
    /** 
     * @name debug 
@@ -98,78 +172,6 @@ class RbGestureEvent {
     * @default false
     */
    debug = false;
-
-   eventConditions = {
-      'press': (ev, lev) => {
-         return ev.eventType == 'down';
-      },
-      'release': (ev, lev) => {
-         return ev.eventType == 'up';
-      },
-      'click': (ev, lev) => {
-         if (eventConditions['release'](ev, lev) && ev.pointerNum == 0) {
-            return ev.time - ev.startTime <= 500;
-         } else return false;
-      },
-      'doubleclick': (() => {
-         let clickCount = 0;
-         let lastClickTime = new Date;
-         let lastClickLocation = [0, 0];
-         return (ev, lev) => {
-            const pointer = lev.pointers[ev.originEvent.pointerId];
-            if (eventConditions['click'](ev, lev)) {
-               const nowTime = new Date;
-               if (nowTime - lastClickTime <= 550 && ((pointer.location[0] - lastClickLocation[0]) ** 2 + (pointer.location[1] - lastClickLocation[1]) ** 2) <= 400) {
-                  clickCount += 1;
-               } else {
-                  clickCount = 1;
-               }
-               lastClickTime = new Date;
-               lastClickLocation = [...pointer.location];
-            }
-            if (clickCount == 2) {
-               clickCount = 0;
-               return true;
-            } else return false;
-         };
-      })(),
-      'longtouch': (ev, lev) => { },
-
-      'pinch': (ev, lev) => { },
-      'rotate': (ev, lev) => { },
-      'drag': (ev, lev) => { },
-      'move': (ev, lev) => { },
-
-      /* dragEvent */
-      'dragstart': (ev, lev) => { },
-      'dragmove': (ev, lev) => { },
-      'dragend': (ev, lev) => { },
-      'dragcancel': (ev, lev) => { },
-      'dragleft': (ev, lev) => { },
-      'dragright': (ev, lev) => { },
-      'dragup': (ev, lev) => { },
-      'dragdown': (ev, lev) => { },
-
-      /* swipeEvent */
-      'swipeleft': (ev, lev) => { },
-      'swiperight': (ev, lev) => { },
-      'swipeup': (ev, lev) => { },
-      'swipedown': (ev, lev) => { },
-
-      /* pinchEvent */
-      'pinchstart': (ev, lev) => { },
-      'pinchmove': (ev, lev) => { },
-      'pinchend': (ev, lev) => { },
-      'pinchcancel': (ev, lev) => { },
-      'pinchin': (ev, lev) => { },
-      'pinchout': (ev, lev) => { },
-
-      /* rotateEvent */
-      'rotatestart': (ev, lev) => { },
-      'rotatemove': (ev, lev) => { },
-      'rotateend': (ev, lev) => { },
-      'rotatecancel': (ev, lev) => { },
-   };
 
    /**
     * @name 构造函数
@@ -194,12 +196,13 @@ class RbGestureEvent {
       }
    }
 
-   /**
-    * @name 更新上一个事件状态
-    */
-   updateLastEventState() {
-      this.lastEventState = structuredClone(eventState);
-      this.lastEventState.time = new Date;
+   /** @description 更新事件状态 */
+   updateState(event) {
+      RbEventState.lastEventState = structuredClone(eventState);
+      RbEventState.lastEventState.time = new Date;
+
+      RbEventState.outEventState = structuredClone(eventState);
+      RbEventState.outEventState['originEvent'] = event;
    }
 
    /**
@@ -207,16 +210,15 @@ class RbGestureEvent {
     * @param {String} elementMark 
     * @param {Event} event 事件返回
     */
-   dispatchEvent(elementMark, event) {
+   __dispatchEvent(elementMark) {
       // 过滤符合条件的事件并执行注册的回调函数
-      const eventInput = structuredClone(this.eventState);
-      eventInput['originEvent'] = event;
+      const eventInput = RbEventState.outEventState;
 
       const effectiveList = Object.entries(this.eventConditions).filter(
          ([key, value]) => (
             this.eventRegistry.hasOwnProperty(elementMark)
             && this.eventRegistry[elementMark].hasOwnProperty(key)
-            && value(eventInput, this.lastEventState)
+            && value(eventInput, RbEventState.lastEventState)
          )
       );
 
@@ -233,13 +235,14 @@ class RbGestureEvent {
     */
    pointerdown(event) {
       const id = event.pointerId;
+      const eventState = RbGestureEvent.eventState;
 
       // 设置事件状态的时间和类型
-      this.eventState.time = new Date;
-      this.eventState.eventType = 'down';
+      eventState.time = new Date;
+      eventState.eventType = 'down';
 
       // 初始化触摸点信息
-      this.eventState.pointers[id] = {
+      eventState.pointers[id] = {
          move: false,
          velocity: [0, 0],
          displacement: [0, 0],
@@ -251,45 +254,43 @@ class RbGestureEvent {
       };
 
       // 处理一个触摸点的情况
-      if (this.eventState.pointerCount == 0) {
-         this.eventState.startTime = new Date;
+      if (eventState.pointerCount == 0) {
+         eventState.startTime = new Date;
       }
 
       // 处理两个及以上触摸点的情况
-      if (this.eventState.pointerCount == 1) {
+      if (eventState.pointerCount == 1) {
          const twoPointerLocation = [
-            [this.eventState.pointers.values[0].clientX, this.eventState.pointers.values[0].clientY],
-            [this.eventState.pointers.values[1].clientX, this.eventState.pointers.values[1].clientY]
+            [eventState.pointers.values[0].clientX, eventState.pointers.values[0].clientY],
+            [eventState.pointers.values[1].clientX, eventState.pointers.values[1].clientY]
          ];
 
          // 计算两点间的初始长度和角度
-         this.eventState.startLength = RbGestureEvent.eDistance(twoPointerLocation);
-         this.eventState.startAngle = RbGestureEvent.refAngle(twoPointerLocation);
+         eventState.startLength = RbGestureEvent.eDistance(twoPointerLocation);
+         eventState.startAngle = RbGestureEvent.refAngle(twoPointerLocation);
 
          // 计算两点间的中点
-         this.eventState.midPoint = RbGestureEvent.midPoint(twoPointerLocation);
+         eventState.midPoint = RbGestureEvent.midPoint(twoPointerLocation);
       }
 
       // 增加触摸点计数
-      this.eventState.pointerCount += 1;
-
-      // 调用事件处理函数
-      this.dispatchEvent(event.target.mark, event);
-
-      // 更新上一个事件状态
-      this.updateLastEventState();
+      eventState.pointerCount += 1;
+      this.updateState(event);
    }
 
    /**
     * @name 处理触摸移动事件
     * @param {PointerEvent} event 
     */
-   pointerdarg(event) {
-      if (this.eventState.pointerCount >= 1) {
+   pointerdrag(event) {
+      const eventState = RbGestureEvent.eventState;
+      const lastEventState = RbGestureEvent.lastEventState;
+
+      if (eventState.pointerCount >= 1) {
          const id = event.pointerId;
-         const pointer = this.eventState.pointers[id];
-         this.eventState.time = new Date;
-         this.eventState.eventType = 'move';
+         const pointer = eventState.pointers[id];
+         eventState.time = new Date;
+         eventState.eventType = 'move';
 
          /* 如果还在移动就取消清零速度 */
          clearTimeout(pointer.velocityTimeOut);
@@ -303,28 +304,27 @@ class RbGestureEvent {
          pointer.location = [event.clientX, event.clientY];
          pointer.displacement = [event.clientX - pointer.startLocation[0], event.clientY - pointer.startLocation[1]];
 
-         const deltaTime = new Date - lastthis.EventState.time;
+         const deltaTime = new Date - lastEventState.time;
          pointer.velocity = [
-            (pointer.location[0] - lastthis.EventState.pointers[id].location[0]) / deltaTime,
-            (pointer.location[1] - lastthis.EventState.pointers[id].location[1]) / deltaTime,
+            (pointer.location[0] - lastEventState.pointers[id].location[0]) / deltaTime,
+            (pointer.location[1] - lastEventState.pointers[id].location[1]) / deltaTime,
          ];
 
-         if (this.eventState.pointerCount == 2) {
+         if (eventState.pointerCount == 2) {
             const twoPointerLocationg = [
-               [this.eventState.pointers.values[0].clientX, this.eventState.pointers.values[0].clientY],
-               [this.eventState.pointers.values[1].clientX, this.eventState.pointers.values[1].clientY]
+               [eventState.pointers.values[0].clientX, eventState.pointers.values[0].clientY],
+               [eventState.pointers.values[1].clientX, eventState.pointers.values[1].clientY]
             ];
 
             const nowlenth = RbGestureEvent.eDistance(twoPointerLocationg);
             const nowangle = RbGestureEvent.angle(twoPointerLocationg);
 
-            this.eventState.scale = nowlenth / this.eventState.startLenth;
-            this.eventState.angle = nowangle - this.eventState.startAngle;
-            this.eventState.midPoint = RbGestureEvent.mid(twoPointerLocationg);
+            eventState.scale = nowlenth / eventState.startLength;
+            eventState.refAngle = nowangle - eventState.startAngle;
+            eventState.midPoint = RbGestureEvent.mid(twoPointerLocationg);
          }
 
-         this.dispatchEvent(event.target.mark, event);
-         this.updateLastEventState();
+         this.updateState(event);
       }
    }
 
@@ -334,43 +334,98 @@ class RbGestureEvent {
     */
    pointerup(event) {
       const id = event.pointerId;
-      this.eventState.time = new Date;
-      this.eventState.eventType = 'up';
-      this.eventState.pointerCount -= 1;
-      delete this.eventState.pointers[id];
-      this.dispatchEvent(event.target.mark, event);
-      this.updateLastEventState();
+      delete RbGestureEvent.eventState.pointers[id];
+
+      RbGestureEvent.eventState.time = new Date;
+      RbGestureEvent.eventState.eventType = 'up';
+      RbGestureEvent.eventState.pointerCount -= 1;
+
+      this.updateState(event);
    }
 
    /**
     * 注册事件
     * @param {HTMLElement} element 元素
-    * @param {String} eventType 事件类型
+    * @param {String} type 事件类型
     * @param {Function} callback 回调函数
     * @returns {void} - 无返回值
     */
-   registerEvent(element, eventType, callback) {
-      const elementMark = getElementMark(element);
-      if (!this.eventRegistry[elementMark]) {
-         this.eventRegistry[elementMark] = {};
+   registerEvent(element, type, callback) {
+      if (this.debug) {
+         console.log(`register event: ${type} on ${element}`);
+      } else {
+         if (!element[_EVENTLIST]) {
+            element[_EVENTLIST] = {};
+            element.addEventListener('pointerdown', RbGestureEvent.downdispatch, true);
+            element.addEventListener('pointermove', RbGestureEvent.movedispatch, true);
+            element.addEventListener('pointerup', RbGestureEvent.updispatch, true);
+         }
+         if (!element[_EVENTLIST][type]) {
+            element[_EVENTLIST][type] = [];
+         }
+
+         callback = callback.bind(element);
+         element[_EVENTLIST][type].push(callback);
       }
-      if (!this.eventRegistry[elementMark][eventType]) {
-         this.eventRegistry[elementMark][eventType] = [];
-      }
-      this.eventRegistry[elementMark][eventType].push(callback);
    }
 
    /**
     * 注销事件
     * @param {HTMLElement} element 元素
-    * @param {String} eventType 事件类型
+    * @param {String} type 事件类型
     * @param {Function} callback 回调函数
     * @returns {void} - 无返回值
     */
-   cancelEvent(element, eventType, callback) {
-      const elementMark = getElementMark(element);
-      const index = this.eventRegistry[elementMark][eventType].findIndex(e => e === callback);
-      this.eventRegistry[elementMark][eventType].splice(index, 1);
+   cancelEvent(element, type, callback) {
+      if (this.debug) {
+         console.log(`cancel event: ${type} on ${element}`);
+      } else {
+         const list = element[_EVENTLIST][type];
+         const index = list.indexOf(callback);
+         if (index != -1) {
+            list.splice(index, 1);
+         } else {
+            console.error(`callback not found`);
+         }
+      }
+   }
+
+   static downdispatch = event => {
+      RbGestureEvent.dispatchEvent(this);
+      /*  因为长按固定在按下后0.5秒触发，所以使用setTimeout
+       *  如果需要更加精确区分不同时长的长按事件，请使用setInterval
+       */
+      this[_LONGTOUCH] = settimeout(() => {
+         RbGestureEvent.longtouchdispatch(event);
+      }, 500);
+   }
+
+   static longtouchdispatch = event => {
+      RbGestureEvent.dispatchEvent(this);
+   }
+
+   static movedispatch = event => {
+      RbGestureEvent.dispatchEvent(this);
+   }
+
+   static updispatch = event => {
+      RbGestureEvent.dispatchEvent(this);
+      clearInterval(this[_LONGTOUCH]);
+   }
+
+   /**
+    * @name dispatchEvent
+    * @description 筛选符合触发条件的事件并执行
+    * @param {HTMLElement} element - 元素
+    */
+   static dispatchEvent(element) {
+      const keys = Object.keys(element[_EVENTLIST]);
+      let activeQueue = keys.filter(type => {
+         return eventConditions[type](RbGestureEvent.eventState, RbGestureEvent.lastEventState);
+      });
+      activeQueue.forEach(
+         callback => callback(eventState)
+      );
    }
 
 
@@ -406,6 +461,16 @@ class RbGestureEvent {
 }
 
 /**
+ * @name _tiking
+ * @description 节流标记符号
+ * @type {Symbol}
+ * @private
+ * @default Symbol('tiking')
+ * @readonly
+ */
+const _tiking = Symbol('tiking');
+
+/**
  * 代码节流，会返回将输入函数修饰成节流函数
  * @constructor
  * @param {Function} func -需要节流的函数
@@ -413,16 +478,15 @@ class RbGestureEvent {
  */
 const Throttle = function (func) {
    /* 为函数分配一个tiking属性，方便之后实现节流 */
-   const tiking = Symbol('tiking');
-   Object.defineProperty(func, tiking, { value: false, writable: true });
+   Object.defineProperty(func, _tiking, { value: false, writable: true });
 
    return function (...arg) {
-      if (!func[tiking]) {
+      if (!func[_tiking]) {
          requestAnimationFrame(() => {
             func(...arg);
-            func[tiking] = false;
+            func[_tiking] = false;
          });
-         func[tiking] = true;
+         func[_tiking] = true;
       }
    }
 }
@@ -436,12 +500,11 @@ const Throttle = function (func) {
  * @returns {Function} -修饰成防抖函数的func
  */
 const AntiShake = function (func, time) {
-   const tiking = Symbol('tiking');
-   Object.defineProperty(func, tiking, { writable: true });
+   Object.defineProperty(func, _tiking, { writable: true });
    return function (...arg) {
-      clearTimeout(func[tiking]);
-      func[tiking] = setTimeout(() => func(...arg), time);
+      clearTimeout(func[_tiking]);
+      func[_tiking] = setTimeout(() => func(...arg), time);
    }
 };
 
-export { RbGestureEvent, Throttle, AntiShake };
+export { RbGestureEvent };
