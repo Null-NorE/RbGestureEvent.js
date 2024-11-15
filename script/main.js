@@ -17,9 +17,9 @@ const main = event => {
    const clickf = event => {
       console.log('click');
    }
-   const clickfcb = gesture.registerEvent(button, 'click', clickf);
-   gesture.cancelEvent(button, 'click', clickfcb);
-
+   gesture.registerEventListener(button, 'click', clickf);
+   gesture.registerEventListener(button, 'press', event => console.log('press'));
+   // gesture.cancelEventListener(button, 'click', clickf);
 }
 
 window.document.addEventListener('DOMContentLoaded', main);

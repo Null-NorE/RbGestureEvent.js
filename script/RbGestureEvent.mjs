@@ -10,12 +10,13 @@ let debug = false;
 
 const EVENTLIST = Symbol('eventList');
 const LONGTOUCH = Symbol('longtouch');
+const CBMAPPING = Symbol('callbackMapping');
 
 /**
  * @name RbEventState
  * @description 事件状态类
  * @class
- * @member {Number} time 事件发生时间
+ * @member {Date} time 事件发生时间
  * @member {String} eventType 事件类型
  * 
  * @member {Number} scale 缩放比例
@@ -26,13 +27,13 @@ const LONGTOUCH = Symbol('longtouch');
  * 
  * @member {Number} startLenth 初始长度
  * @member {Number} startAngle 初始角度
- * @member {Number} startTime 初始时间
+ * @member {Date} startTime 初始时间
  * 
  * @member {Array} pointers 指针
  * @member {Number} pointerCount 指针数量
  */
-class RbEventState {
-   time = 0;
+class EventState {
+   time = undefined;
    eventType = '';
 
    scale = 1;
@@ -52,7 +53,7 @@ class RbEventState {
 /**
  * @name eventConditions
  * @description 事件条件对象，包含用于判断各种事件类型的条件函数
- * @type {Record<String, (ev: RbEventState, lev: RbEventState) => Boolean>}
+ * @type {Record<String, (ev: EventState, lev: EventState) => Boolean>}
  * @private
  * @constant
  */
@@ -136,59 +137,42 @@ const eventConditions = {
  * @member {RbEventState} lastEventState 上一次事件状态
  * @member {RbEventState} outEventState 输出事件状态
  */
-class RbGestureEvent {
+class GestureEvent {
    /**
     * @description 事件状态
-    * @type {RbEventState}
+    * @type {EventState}
     * @private
     */
-   static eventState = new RbEventState;
+   static eventState = new EventState;
 
    /**
     * @description 上一次事件状态
-    * @type {RbEventState}
+    * @type {EventState}
     * @private
     */
-   static lastEventState = new RbEventState;
+   static lastEventState = new EventState;
 
    /**
     * @description 输出事件状态
-    * @type {RbEventState}
+    * @type {EventState}
     */
-   static outEventState = new RbEventState;
-
-   /**
-    * @name eventRegistry
-    * @description 事件注册表
-    * @type {WeakMap}
-    */
-   eventRegistry = new WeakMap;
-
-   /**
-    * @name callbackMapping
-    * @description 把传入的原始回调函数映射到bind封装之后的回调函数
-    * @type {WeakMap}
-    * @private
-    */
-   callbackMapping = new WeakMap;
+   static outEventState = new EventState;
 
    /**
     * @name 构造函数
     * @param {Boolean} _debug 是否开启调试模式
     * @constructor
-    * @returns {RbGestureEvent} - 返回一个RbGestureEvent实例
+    * @returns {GestureEvent} - 返回一个RbGestureEvent实例
     * @description 构造函数
     */
    constructor(_debug = false) {
       debug = _debug;
       // 监听触摸相关事件
-      document.addEventListener('DOMContentLoaded', () => {
-         [
-            ['pointerdown', pointerdown],
-            ['pointermove', pointerdarg],
-            ['pointerup', pointerup],
-         ].forEach(n => window.addEventListener(n[0], n[1], true));
-      });
+      [
+         ['pointerdown', this.pointerdown],
+         ['pointermove', this.pointermove],
+         ['pointerup', this.pointerup],
+      ].forEach(n => window.addEventListener(n[0], n[1], true));
 
       if (debug) {
          console.log('loading RbGestureListener');
@@ -197,44 +181,20 @@ class RbGestureEvent {
 
    /** @description 更新事件状态 */
    updateState(event) {
-      RbEventState.lastEventState = structuredClone(eventState);
-      RbEventState.lastEventState.time = new Date;
+      EventState.lastEventState = structuredClone(eventState);
+      EventState.lastEventState.time = new Date;
 
-      RbEventState.outEventState = structuredClone(eventState);
-      RbEventState.outEventState['originEvent'] = event;
-   }
-
-   /**
-    * 调用事件
-    * @param {String} elementMark 
-    * @param {Event} event 事件返回
-    */
-   __dispatchEvent(elementMark) {
-      // 过滤符合条件的事件并执行注册的回调函数
-      const eventInput = RbEventState.outEventState;
-
-      const effectiveList = Object.entries(this.eventConditions).filter(
-         ([key, value]) => (
-            this.eventRegistry.hasOwnProperty(elementMark)
-            && this.eventRegistry[elementMark].hasOwnProperty(key)
-            && value(eventInput, RbEventState.lastEventState)
-         )
-      );
-
-      effectiveList.forEach(
-         e => this.eventRegistry[elementMark][e[0]].forEach(
-            f => f(eventInput)
-         )
-      );
+      EventState.outEventState = structuredClone(eventState);
+      EventState.outEventState['originEvent'] = event;
    }
 
    /**
     * @name 处理触摸开始事件
     * @param {PointerEvent} event 
     */
-   pointerdown(event) {
+   pointerdown = (event) => {
       const id = event.pointerId;
-      const eventState = RbGestureEvent.eventState;
+      const eventState = GestureEvent.eventState;
 
       // 设置事件状态的时间和类型
       eventState.time = new Date;
@@ -265,11 +225,11 @@ class RbGestureEvent {
          ];
 
          // 计算两点间的初始长度和角度
-         eventState.startLength = RbGestureEvent.eDistance(twoPointerLocation);
-         eventState.startAngle = RbGestureEvent.refAngle(twoPointerLocation);
+         eventState.startLength = GestureEvent.eDistance(twoPointerLocation);
+         eventState.startAngle = GestureEvent.refAngle(twoPointerLocation);
 
          // 计算两点间的中点
-         eventState.midPoint = RbGestureEvent.midPoint(twoPointerLocation);
+         eventState.midPoint = GestureEvent.midPoint(twoPointerLocation);
       }
 
       // 增加触摸点计数
@@ -281,9 +241,9 @@ class RbGestureEvent {
     * @name 处理触摸移动事件
     * @param {PointerEvent} event 
     */
-   pointerdrag(event) {
-      const eventState = RbGestureEvent.eventState;
-      const lastEventState = RbGestureEvent.lastEventState;
+   pointermove = (event) => {
+      const eventState = GestureEvent.eventState;
+      const lastEventState = GestureEvent.lastEventState;
 
       if (eventState.pointerCount >= 1) {
          const id = event.pointerId;
@@ -315,12 +275,12 @@ class RbGestureEvent {
                [eventState.pointers.values[1].clientX, eventState.pointers.values[1].clientY]
             ];
 
-            const nowlenth = RbGestureEvent.eDistance(twoPointerLocationg);
-            const nowangle = RbGestureEvent.angle(twoPointerLocationg);
+            const nowlenth = GestureEvent.eDistance(twoPointerLocationg);
+            const nowangle = GestureEvent.angle(twoPointerLocationg);
 
             eventState.scale = nowlenth / eventState.startLength;
             eventState.refAngle = nowangle - eventState.startAngle;
-            eventState.midPoint = RbGestureEvent.mid(twoPointerLocationg);
+            eventState.midPoint = GestureEvent.mid(twoPointerLocationg);
          }
 
          this.updateState(event);
@@ -331,13 +291,13 @@ class RbGestureEvent {
     * @name 处理触摸结束事件
     * @param {PointerEvent} event 
     */
-   pointerup(event) {
+   pointerup = (event) => {
       const id = event.pointerId;
-      delete RbGestureEvent.eventState.pointers[id];
+      delete GestureEvent.eventState.pointers[id];
 
-      RbGestureEvent.eventState.time = new Date;
-      RbGestureEvent.eventState.eventType = 'up';
-      RbGestureEvent.eventState.pointerCount -= 1;
+      GestureEvent.eventState.time = new Date;
+      GestureEvent.eventState.eventType = 'up';
+      GestureEvent.eventState.pointerCount -= 1;
 
       this.updateState(event);
    }
@@ -347,27 +307,40 @@ class RbGestureEvent {
     * @param {HTMLElement} element 元素
     * @param {String} type 事件类型
     * @param {Function} callback 回调函数
-    * @returns {Function} - 返回一个封装后的回调函数, 用于注销事件
+    * @returns {void} - 无返回值
     */
-   registerEvent(element, type, callback) {
-      if (debug) console.log(`register event: ${type} on`, element);
+   registerEventListener(element, type, callback) {
 
       if (!element[EVENTLIST]) {
          element[EVENTLIST] = {};
-         element.addEventListener('pointerdown', RbGestureEvent.downdispatch, true);
-         element.addEventListener('pointermove', RbGestureEvent.movedispatch, true);
-         element.addEventListener('pointerup', RbGestureEvent.updispatch, true);
+         element.addEventListener('pointerdown', GestureEvent.downdispatch, true);
+         element.addEventListener('pointermove', GestureEvent.movedispatch, true);
+         element.addEventListener('pointerup', GestureEvent.updispatch, true);
       }
       if (!element[EVENTLIST][type]) {
          element[EVENTLIST][type] = [];
       }
 
-      const boundcallback = callback.bind(element);
+      let boundcallback;
+      // 判断是否是匿名函数
+      if (callback.name != '') {
+         // 将未修饰回调函数和修饰后的回调函数的对应关系保存起来
+         if (!element[CBMAPPING]) {
+            element[CBMAPPING] = new WeakMap;
+            boundcallback = callback.bind(element);
+            element[CBMAPPING].set(callback, boundcallback);
+         } else if (element[CBMAPPING].has(callback)) {
+            if (debug) console.warn('callback already registered');
+            boundcallback = element[CBMAPPING].get(callback);
+         }
+      } else boundcallback = callback.bind(element);
+
       element[EVENTLIST][type].push(boundcallback);
 
-      if (debug) console.log('eventList:', element[EVENTLIST]);
-
-      return boundcallback;
+      if (debug) {
+         console.log(`register event: ${type} on`, element);
+         console.log('eventList:', element[EVENTLIST])
+      };
    }
 
    /**
@@ -377,23 +350,24 @@ class RbGestureEvent {
     * @param {Function} callback 回调函数
     * @returns {void} - 无返回值
     */
-   cancelEvent(element, type, callback) {
+   cancelEventListener(element, type, callback) {
       if (debug) console.log(`cancel event: ${type} on`, element);
 
-      /** @type {Array} */
       const list = element[EVENTLIST][type];
-      const index = list.indexOf(callback);
+      const index = list.indexOf(element[CBMAPPING].get(callback));
       if (index != -1) {
          list.splice(index, 1);
+         if (element[CBMAPPING].has(callback))
+            element[CBMAPPING].delete(callback);
 
          if (element[EVENTLIST][type].length == 0) {
             delete element[EVENTLIST][type];
 
             if (Object.keys(element[EVENTLIST]).length == 0) {
                delete element[EVENTLIST];
-               element.removeEventListener('pointerdown', RbGestureEvent.downdispatch, true);
-               element.removeEventListener('pointermove', RbGestureEvent.movedispatch, true);
-               element.removeEventListener('pointerup', RbGestureEvent.updispatch, true);
+               element.removeEventListener('pointerdown', GestureEvent.downdispatch, true);
+               element.removeEventListener('pointermove', GestureEvent.movedispatch, true);
+               element.removeEventListener('pointerup', GestureEvent.updispatch, true);
             }
          }
 
@@ -405,16 +379,16 @@ class RbGestureEvent {
 
    /**
     * @name downdispatch
-    * @description 按下事件分发器
+    * @description 按下事件调度器
     * @param {PointerEvent} event - 事件 
     */
    static downdispatch() {
-      if (debug) console.log('down');
+      // if (debug) console.log('down');
 
-      RbGestureEvent.dispatchEvent(this);
-      if (RbGestureEvent.eventState.pointerCount == 1)
+      GestureEvent.dispatchEvent(this);
+      if (GestureEvent.eventState.pointerCount == 1)
          this[LONGTOUCH] = setInterval(() => {
-            RbGestureEvent.longtouchdispatch();
+            GestureEvent.longtouchdispatch();
          }, 100);
       else if (this[LONGTOUCH])
          clearInterval(this[LONGTOUCH]);
@@ -422,17 +396,17 @@ class RbGestureEvent {
 
    static longtouchdispatch() {
       if (debug) console.log('longtouch');
-      RbGestureEvent.dispatchEvent(this);
+      GestureEvent.dispatchEvent(this);
    }
 
    static movedispatch() {
-      if (debug) console.log('move');
-      RbGestureEvent.dispatchEvent(this);
+      // if (debug) console.log('move');
+      GestureEvent.dispatchEvent(this);
    }
 
    static updispatch() {
-      if (debug) console.log('up');
-      RbGestureEvent.dispatchEvent(this);
+      // if (debug) console.log('up');
+      GestureEvent.dispatchEvent(this);
       clearInterval(this[LONGTOUCH]);
    }
 
@@ -445,11 +419,12 @@ class RbGestureEvent {
       const keys = Object.keys(element[EVENTLIST]);
       let activeQueue = keys.filter(type => {
          // 执行eventConditions中对应的条件函数
-         return eventConditions[type](RbGestureEvent.eventState, RbGestureEvent.lastEventState);
+         return eventConditions[type](GestureEvent.eventState, GestureEvent.lastEventState);
       });
-      activeQueue.forEach(
-         callback => callback(eventState)
-      );
+      if (activeQueue.length != 0)
+         activeQueue.forEach(
+            type => element[EVENTLIST][type].forEach(callback => callback(GestureEvent.outEventState))
+         );
    }
 
 
@@ -484,45 +459,4 @@ class RbGestureEvent {
    static midPoint = ([x1, y1], [x2, y2]) => [(x1 - x2) / 2, (y1 - y2) / 2];
 }
 
-
-const TIKING = Symbol('tiking');
-const ANTITIMER = Symbol('antitimer');
-
-/**
- * 代码节流，会返回将输入函数修饰成节流函数
- * @constructor
- * @param {Function} func -需要节流的函数
- * @returns {Function} -修饰成节流函数的func
- */
-const Throttle = function (func) {
-   /* 为函数分配一个tiking属性，方便之后实现节流 */
-   Object.defineProperty(func, TIKING, { value: false, writable: true });
-
-   return function (...arg) {
-      if (!func[TIKING]) {
-         requestAnimationFrame(() => {
-            func(...arg);
-            func[TIKING] = false;
-         });
-         func[TIKING] = true;
-      }
-   }
-}
-
-
-/**
- * 代码防抖，会返回将输入函数修饰成防抖函数
- * @constructor
- * @param {Function} func -需要防抖的函数
- * @param {Number} time -防抖延时
- * @returns {Function} -修饰成防抖函数的func
- */
-const AntiShake = function (func, time) {
-   Object.defineProperty(func, ANTITIMER, { writable: true });
-   return function (...arg) {
-      clearTimeout(func[ANTITIMER]);
-      func[ANTITIMER] = setTimeout(() => func(...arg), time);
-   }
-};
-
-export { RbGestureEvent };
+export { GestureEvent as RbGestureEvent };
