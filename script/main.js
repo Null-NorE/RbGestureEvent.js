@@ -14,11 +14,12 @@ const main = event => {
    const button = document.querySelector('#mid-in');
 
    const gesture = new RbGestureEvent(true);
-   gesture.registerEvent(button, 'click', event => {
+   const clickf = event => {
       console.log('click');
-   });
-   console.log(gesture);
-   
+   }
+   const clickfcb = gesture.registerEvent(button, 'click', clickf);
+   gesture.cancelEvent(button, 'click', clickfcb);
+
 }
 
 window.document.addEventListener('DOMContentLoaded', main);

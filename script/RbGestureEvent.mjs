@@ -1,5 +1,16 @@
 "use strict";
 
+/** 
+ * @name debug 
+ * @description 是否开启调试模式
+ * @type {Boolean}
+ * @default false
+ */
+let debug = false;
+
+const EVENTLIST = Symbol('eventList');
+const LONGTOUCH = Symbol('longtouch');
+
 /**
  * @name RbEventState
  * @description 事件状态类
@@ -38,10 +49,6 @@ class RbEventState {
    pointerCount = 0;
 }
 
-
-const EVENTLIST = Symbol('eventList');
-const LONGTOUCH = Symbol('longtouch');
-
 /**
  * @name eventConditions
  * @description 事件条件对象，包含用于判断各种事件类型的条件函数
@@ -57,7 +64,7 @@ const eventConditions = {
       return ev.eventType == 'up';
    },
    'click': (ev, lev) => {
-      if (eventConditions['release'](ev, lev) && ev.pointerNum == 0) {
+      if (eventConditions['release'](ev, lev) && ev.pointerCount == 0) {
          return ev.time - ev.startTime <= 500;
       } else return false;
    },
@@ -127,8 +134,7 @@ const eventConditions = {
  * @class
  * @member {RbEventState} eventState 事件状态
  * @member {RbEventState} lastEventState 上一次事件状态
- * @member {Object} eventRegistry 事件注册表
- * @member {Boolean} debug 是否开启调试模式
+ * @member {RbEventState} outEventState 输出事件状态
  */
 class RbGestureEvent {
    /**
@@ -158,23 +164,23 @@ class RbGestureEvent {
     */
    eventRegistry = new WeakMap;
 
-   /** 
-    * @name debug 
-    * @description 是否开启调试模式
-    * @type {Boolean}
-    * @default false
+   /**
+    * @name callbackMapping
+    * @description 把传入的原始回调函数映射到bind封装之后的回调函数
+    * @type {WeakMap}
+    * @private
     */
-   debug = false;
+   callbackMapping = new WeakMap;
 
    /**
     * @name 构造函数
-    * @param {Boolean} debug 是否开启调试模式
+    * @param {Boolean} _debug 是否开启调试模式
     * @constructor
     * @returns {RbGestureEvent} - 返回一个RbGestureEvent实例
     * @description 构造函数
     */
-   constructor(debug = false) {
-      this.debug = debug;
+   constructor(_debug = false) {
+      debug = _debug;
       // 监听触摸相关事件
       document.addEventListener('DOMContentLoaded', () => {
          [
@@ -184,7 +190,7 @@ class RbGestureEvent {
          ].forEach(n => window.addEventListener(n[0], n[1], true));
       });
 
-      if (this.debug) {
+      if (debug) {
          console.log('loading RbGestureListener');
       }
    }
@@ -341,25 +347,27 @@ class RbGestureEvent {
     * @param {HTMLElement} element 元素
     * @param {String} type 事件类型
     * @param {Function} callback 回调函数
-    * @returns {void} - 无返回值
+    * @returns {Function} - 返回一个封装后的回调函数, 用于注销事件
     */
    registerEvent(element, type, callback) {
-      if (this.debug) {
-         console.log(`register event: ${type} on ${element}`);
-      } else {
-         if (!element[EVENTLIST]) {
-            element[EVENTLIST] = {};
-            element.addEventListener('pointerdown', RbGestureEvent.downdispatch, true);
-            element.addEventListener('pointermove', RbGestureEvent.movedispatch, true);
-            element.addEventListener('pointerup', RbGestureEvent.updispatch, true);
-         }
-         if (!element[EVENTLIST][type]) {
-            element[EVENTLIST][type] = [];
-         }
+      if (debug) console.log(`register event: ${type} on`, element);
 
-         callback = callback.bind(element);
-         element[EVENTLIST][type].push(callback);
+      if (!element[EVENTLIST]) {
+         element[EVENTLIST] = {};
+         element.addEventListener('pointerdown', RbGestureEvent.downdispatch, true);
+         element.addEventListener('pointermove', RbGestureEvent.movedispatch, true);
+         element.addEventListener('pointerup', RbGestureEvent.updispatch, true);
       }
+      if (!element[EVENTLIST][type]) {
+         element[EVENTLIST][type] = [];
+      }
+
+      const boundcallback = callback.bind(element);
+      element[EVENTLIST][type].push(boundcallback);
+
+      if (debug) console.log('eventList:', element[EVENTLIST]);
+
+      return boundcallback;
    }
 
    /**
@@ -370,16 +378,28 @@ class RbGestureEvent {
     * @returns {void} - 无返回值
     */
    cancelEvent(element, type, callback) {
-      if (this.debug) {
-         console.log(`cancel event: ${type} on ${element}`);
-      } else {
-         const list = element[EVENTLIST][type];
-         const index = list.indexOf(callback);
-         if (index != -1) {
-            list.splice(index, 1);
-         } else {
-            console.error(`callback not found`);
+      if (debug) console.log(`cancel event: ${type} on`, element);
+
+      /** @type {Array} */
+      const list = element[EVENTLIST][type];
+      const index = list.indexOf(callback);
+      if (index != -1) {
+         list.splice(index, 1);
+
+         if (element[EVENTLIST][type].length == 0) {
+            delete element[EVENTLIST][type];
+
+            if (Object.keys(element[EVENTLIST]).length == 0) {
+               delete element[EVENTLIST];
+               element.removeEventListener('pointerdown', RbGestureEvent.downdispatch, true);
+               element.removeEventListener('pointermove', RbGestureEvent.movedispatch, true);
+               element.removeEventListener('pointerup', RbGestureEvent.updispatch, true);
+            }
          }
+
+         if (debug) console.log('eventList:', element[EVENTLIST]);
+      } else {
+         console.error(`callback not found\n`, `eventList:`, element[EVENTLIST], '\n', `callback:`, callback);
       }
    }
 
@@ -388,7 +408,9 @@ class RbGestureEvent {
     * @description 按下事件分发器
     * @param {PointerEvent} event - 事件 
     */
-   static downdispatch = () => {
+   static downdispatch() {
+      if (debug) console.log('down');
+
       RbGestureEvent.dispatchEvent(this);
       if (RbGestureEvent.eventState.pointerCount == 1)
          this[LONGTOUCH] = setInterval(() => {
@@ -398,15 +420,18 @@ class RbGestureEvent {
          clearInterval(this[LONGTOUCH]);
    }
 
-   static longtouchdispatch = () => {
+   static longtouchdispatch() {
+      if (debug) console.log('longtouch');
       RbGestureEvent.dispatchEvent(this);
    }
 
-   static movedispatch = () => {
+   static movedispatch() {
+      if (debug) console.log('move');
       RbGestureEvent.dispatchEvent(this);
    }
 
-   static updispatch = () => {
+   static updispatch() {
+      if (debug) console.log('up');
       RbGestureEvent.dispatchEvent(this);
       clearInterval(this[LONGTOUCH]);
    }
