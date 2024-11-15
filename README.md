@@ -93,7 +93,7 @@ gestureEvent.off(element, 'press', temp);
 
 ## 贡献
 
-欢迎提交 pull requests、bug 报告和功能请求。对于任何贡献，我们非常感谢！
+先别提交 pull requests、bug 报告和功能请求。虽然对于任何贡献，我们非常感谢，但是，我还管不过来这些
 
 ## 许可证
 
