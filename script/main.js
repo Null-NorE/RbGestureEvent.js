@@ -21,10 +21,13 @@ const main = event => {
       console.log('click');
    }
    gesture.registerEventListener(button, 'click', clickf);
+   gesture.registerEventListener(button, 'click', clickf);
+   gesture.registerEventListener(button, 'click', clickf);
+   gesture.cancelEventListener(button, 'click', clickf);
+   gesture.cancelEventListener(button, 'click', clickf);
    gesture.registerEventListener(button, 'press', event => console.log('press'));
    gesture.registerEventListener(button, 'doubleclick', event => console.log('double click'));
    button.addEventListener('pointermove', e => e.preventDefault());
-   // gesture.cancelEventListener(button, 'click', clickf);
 }
 
 window.document.addEventListener('DOMContentLoaded', main);

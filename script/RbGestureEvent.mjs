@@ -387,17 +387,16 @@ class GestureEvent {
    cancelEventListener(element, type, callback) {
       if (debug) console.log(`cancel event: ${type} on`, element);
 
-      const list = element[EVENTLIST][type];
-      const index = list.indexOf(element[CBMAPPING].get(callback));
-      if (index != -1) {
+      if (element[CBMAPPING].has(callback)) {
+         const list = element[EVENTLIST][type];
+         let {boundcallback, count} = element[CBMAPPING].get(callback);
+
+         const index = list.indexOf(boundcallback);
          list.splice(index, 1);
-         if (element[CBMAPPING].has(callback)) {
-            const temp = element[CBMAPPING].get(callback);
-            temp.count -= 1;
-            if (temp.count == 0) {
-               element[CBMAPPING].delete(callback);
-            }
-         }
+
+         count -= 1;
+         if (count == 0)
+            element[CBMAPPING].delete(callback);
 
          if (element[EVENTLIST][type].length == 0) {
             delete element[EVENTLIST][type];
