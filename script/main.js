@@ -27,7 +27,7 @@ const main = event => {
    gesture.cancelEventListener(button, 'click', clickf);
    gesture.registerEventListener(button, 'press', event => console.log('press'));
    gesture.registerEventListener(button, 'doubleclick', event => console.log('double click'));
-   button.addEventListener('pointermove', e => e.preventDefault());
+   gesture.registerEventListener(button, 'longtouch', event => console.log('long touch'));
 }
 
 window.document.addEventListener('DOMContentLoaded', main);

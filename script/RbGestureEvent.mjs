@@ -77,16 +77,18 @@ const eventConditions = {
       } else return false;
    },
    'doubleclick': (() => {
-      let clickCount = 0;
+      let clickCount = 0; // click次数计数器
       let lastClickTime = new Date(1970); // 避免第一次点击时的时间判断出错
       let lastClickLocation = [0, 0];
       return (ev, lev, tri) => {
          if (tri == 'up') {
             const pointer = lev.pointers[ev.upponiterId];
+            // 如果是点击事件
             if (eventConditions['click'](ev, lev, tri)) {
                const nowTime = Date.now();
+               // 如果两次点击的时间间隔小于550ms且两次点击的位置距离小于20px
                if (nowTime - lastClickTime <= 550 && GestureEvent.eDistance(pointer.location, lastClickLocation) <= 20) {
-                  clickCount += 1;
+                  clickCount += 1; // 使用点击计数是为了仅在偶数次点击时触发双击事件
                } else {
                   clickCount = 1;
                }
@@ -100,7 +102,34 @@ const eventConditions = {
          }
       };
    })(),
-   'longtouch': (ev, lev, tri) => { },
+   'longtouch': (() => {
+      let count = 0; // 避免重复触发
+      let up = false; // 避免抬起时触发
+      return (ev, lev, tri) => {
+         if (tri == 'down') {
+            up = false;
+         } else if (tri == 'up') {
+            up = true;
+            count = 0;
+         }
+
+         if (tri == 'longtouch') {
+            // 如果按下时间超过500ms，没有移动，只有一个触摸点，且不是因为抬起导致只剩下一个触摸点的
+            const isDelayEnough = Date.now() - ev.startTime >= 500;
+            const isSinglePointer = ev.pointerCount == 1;
+            const isMove = ev.pointers[ev.originEvent.pointerId].move == false;
+            const isUp = up;
+
+            console.log(isDelayEnough, isSinglePointer, isMove, !isUp);
+
+            const isFristTimes = count == 0; // 避免重复触发
+            if (isDelayEnough && isSinglePointer && isFristTimes && isMove && !isUp) {
+               count += 1;
+               return true;
+            } else return false;
+         }
+      }
+   })(),
 
    'pinch': (ev, lev, tri) => { },
    'rotate': (ev, lev, tri) => { },
@@ -302,7 +331,7 @@ class GestureEvent {
             ];
 
             const nowlenth = GestureEvent.eDistance(twoPointerLocationg);
-            const nowangle = GestureEvent.angle(twoPointerLocationg);
+            const nowangle = GestureEvent.refAngle(twoPointerLocationg);
 
             eventState.scale = nowlenth / eventState.startLength;
             eventState.refAngle = nowangle - eventState.startAngle;
@@ -362,7 +391,7 @@ class GestureEvent {
                count: 1
             });
          } else if (element[CBMAPPING].has(callback)) {
-            if (debug) console.warn('callback already registered');
+            if (debug) console.warn('callback already registered\n', callback);
             const temp = element[CBMAPPING].get(callback);
             boundcallback = temp.boundcallback;
             temp.count += 1;
@@ -389,7 +418,7 @@ class GestureEvent {
 
       if (element[CBMAPPING].has(callback)) {
          const list = element[EVENTLIST][type];
-         let {boundcallback, count} = element[CBMAPPING].get(callback);
+         let { boundcallback, count } = element[CBMAPPING].get(callback);
 
          const index = list.indexOf(boundcallback);
          list.splice(index, 1);
