@@ -28,6 +28,13 @@ const main = event => {
    gesture.registerEventListener(button, 'press', event => console.log('press'));
    gesture.registerEventListener(button, 'doubleclick', event => console.log('double click'));
    gesture.registerEventListener(button, 'longtouch', event => console.log('long touch'));
+   gesture.registerEventListener(button, 'dragstart', event => console.log('drag start'));
+   gesture.registerEventListener(button, 'dragend', event => console.log('drag end'));
+   gesture.registerEventListener(button, 'dragmove', event => console.log('drag move'));
+   gesture.registerEventListener(button, 'dragleft', event => console.log('drag ←'));
+   gesture.registerEventListener(button, 'dragright', event => console.log('drag →'));
+   gesture.registerEventListener(button, 'dragup', event => console.log('drag ↑'));
+   gesture.registerEventListener(button, 'dragdown', event => console.log('drag ↓'));
 }
 
 window.document.addEventListener('DOMContentLoaded', main);

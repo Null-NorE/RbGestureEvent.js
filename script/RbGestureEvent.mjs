@@ -32,10 +32,10 @@ const CBMAPPING = Symbol('callbackMapping');
  * @member {Array} pointers 指针
  * @member {Number} pointerCount 指针数量
  * 
- * @member {Event} originEvent 原始事件
+ * @member {PointerEvent} originEvent 原始事件
  */
 class EventState {
-   time = undefined;
+   time = Date.now();
    eventType = '';
 
    scale = 1;
@@ -46,13 +46,13 @@ class EventState {
 
    startLength = 0;
    startAngle = 0;
-   startTime = undefined;
+   startTime = Date.now();
 
    pointers = [];
    upponiterId = -1;
    pointerCount = 0;
 
-   originEvent = undefined;
+   originEvent = new PointerEvent('none');
 }
 
 /**
@@ -73,7 +73,9 @@ const eventConditions = {
    },
    'click': (ev, lev, tri) => {
       if (eventConditions['release'](ev, lev, tri) && ev.pointerCount == 0) {
-         return ev.time - ev.startTime <= 500;
+         const isInTime = ev.time - ev.startTime <= 500;
+         const isMove = lev.pointers[ev.upponiterId].move == false;
+         return isInTime && isMove;
       } else return false;
    },
    'doubleclick': (() => {
@@ -99,7 +101,7 @@ const eventConditions = {
                clickCount = 0;
                return true;
             } else return false;
-         }
+         } else return false;
       };
    })(),
    'longtouch': (() => {
@@ -120,14 +122,12 @@ const eventConditions = {
             const isMove = ev.pointers[ev.originEvent.pointerId].move == false;
             const isUp = up;
 
-            console.log(isDelayEnough, isSinglePointer, isMove, !isUp);
-
-            const isFristTimes = count == 0; // 避免重复触发
-            if (isDelayEnough && isSinglePointer && isFristTimes && isMove && !isUp) {
+            const isFirstTimes = count == 0; // 避免重复触发
+            if (isDelayEnough && isSinglePointer && isFirstTimes && isMove && !isUp) {
                count += 1;
                return true;
             } else return false;
-         }
+         } else return false;
       }
    })(),
 
@@ -137,14 +137,57 @@ const eventConditions = {
    'move': (ev, lev, tri) => { },
 
    /* dragEvent */
-   'dragstart': (ev, lev, tri) => { },
-   'dragmove': (ev, lev, tri) => { },
-   'dragend': (ev, lev, tri) => { },
+   'dragstart': (ev, lev, tri) => {
+      if (tri == 'move') {
+         const isSinglePointer = ev.pointerCount == 1;
+         const isFirstMove = ev.pointers[ev.originEvent.pointerId].firstMove;
+         return isSinglePointer && isFirstMove;
+      } else return false;
+   },
+   'dragmove': (ev, lev, tri) => {
+      if (tri == 'move') {
+         const isSinglePointer = ev.pointerCount == 1;
+         const isMove = ev.pointers[ev.originEvent.pointerId].move;
+         return isSinglePointer && isMove;
+      } else return false;
+   },
+   'dragend': (() => {
+      let isStart = false;
+      return (ev, lev, tri) => {
+         if (eventConditions['dragstart'](ev, lev, tri)) {
+            isStart = true;
+         }
+         if ((isStart && tri == 'up') || (tri == 'down' && ev.pointerCount > 1)) {
+            isStart = false;
+            return true;
+         } else return false;
+      }
+   })(),
    'dragcancel': (ev, lev, tri) => { },
-   'dragleft': (ev, lev, tri) => { },
-   'dragright': (ev, lev, tri) => { },
-   'dragup': (ev, lev, tri) => { },
-   'dragdown': (ev, lev, tri) => { },
+   'dragleft': (ev, lev, tri) => {
+      if (eventConditions['dragmove'](ev, lev, tri)) {
+         const isLeft = ev.pointers[ev.originEvent.pointerId].displacement[0] < 0;
+         return isLeft;
+      } else return false;
+   },
+   'dragright': (ev, lev, tri) => {
+      if (eventConditions['dragmove'](ev, lev, tri)) {
+         const isRight = ev.pointers[ev.originEvent.pointerId].displacement[0] > 0;
+         return isRight;
+      } else return false;
+   },
+   'dragup': (ev, lev, tri) => {
+      if (eventConditions['dragmove'](ev, lev, tri)) {
+         const isUp = ev.pointers[ev.originEvent.pointerId].displacement[1] < 0;
+         return isUp;
+      } else return false;
+   },
+   'dragdown': (ev, lev, tri) => {
+      if (eventConditions['dragmove'](ev, lev, tri)) {
+         const isDown = ev.pointers[ev.originEvent.pointerId].displacement[1] > 0;
+         return isDown;
+      } else return false;
+   },
 
    /* swipeEvent */
    'swipeleft': (ev, lev, tri) => { },
@@ -197,6 +240,17 @@ class GestureEvent {
    static outEventState = new EventState;
 
    /**
+    * @description 配置
+    * @type {Record<String, Number>}
+    * @private
+    * @constant
+    * @member {Number} threshold 识别需要的最小位移
+    */
+   config = {
+      threshold: 10,
+   }
+
+   /**
     * @name 构造函数
     * @param {Boolean} _debug 是否开启调试模式
     * @constructor
@@ -218,16 +272,25 @@ class GestureEvent {
    }
 
    /** 
-    * @description 更新事件状态
-    * @param {PointerEvent} event - 事件
+    * @description 更新LastEventState
     */
-   updateState(event) {
-      event = GestureEvent.eventState.originEvent
+   updateLastState() {
+      const event = GestureEvent.eventState.originEvent;
       GestureEvent.eventState.originEvent = null;
 
       GestureEvent.lastEventState = structuredClone(GestureEvent.eventState);
       GestureEvent.lastEventState.time = Date.now();
       GestureEvent.lastEventState.originEvent = event;
+
+      GestureEvent.eventState.originEvent = event;
+   }
+
+   /**
+    * @description 将eventState的数据拷贝到outEventState
+    */
+   copyState() {
+      const event = GestureEvent.eventState.originEvent;
+      GestureEvent.eventState.originEvent = null;
 
       GestureEvent.outEventState = structuredClone(GestureEvent.eventState);
       GestureEvent.outEventState.originEvent = event;
@@ -240,7 +303,7 @@ class GestureEvent {
     * @param {PointerEvent} event 
     */
    pointerdown = (event) => {
-      this.updateState();
+      this.updateLastState();
 
       const id = event.pointerId;
       const eventState = GestureEvent.eventState;
@@ -254,6 +317,7 @@ class GestureEvent {
       // 初始化触摸点信息
       eventState.pointers[id] = {
          move: false,
+         firstMove: false,
          velocity: [0, 0],
          displacement: [0, 0],
          location: [event.clientX, event.clientY],
@@ -285,6 +349,7 @@ class GestureEvent {
 
       // 增加触摸点计数
       eventState.pointerCount += 1;
+      this.copyState();
    }
 
    /**
@@ -292,7 +357,7 @@ class GestureEvent {
     * @param {PointerEvent} event 
     */
    pointermove = (event) => {
-      this.updateState();
+      this.updateLastState();
 
       const eventState = GestureEvent.eventState;
       const lastEventState = GestureEvent.lastEventState;
@@ -314,6 +379,7 @@ class GestureEvent {
             pointer.velocity = [0, 0];
          }, 100);
 
+         pointer.firstMove = !pointer.move; // 记录是否是第一次移动，第一次移动时此时的move为false，先赋值让firtMove下一次才为true
          pointer.move = true;
          pointer.location = [event.clientX, event.clientY];
          pointer.displacement = [event.clientX - pointer.startLocation[0], event.clientY - pointer.startLocation[1]];
@@ -337,6 +403,8 @@ class GestureEvent {
             eventState.refAngle = nowangle - eventState.startAngle;
             eventState.midPoint = GestureEvent.midPoint(twoPointerLocationg);
          }
+
+         this.copyState();
       }
    }
 
@@ -345,7 +413,7 @@ class GestureEvent {
     * @param {PointerEvent} event 
     */
    pointerup = (event) => {
-      this.updateState();
+      this.updateLastState();
 
       const eventState = GestureEvent.eventState;
       eventState.originEvent = event;
@@ -357,6 +425,8 @@ class GestureEvent {
       eventState.time = Date.now();
       eventState.eventType = 'up';
       eventState.pointerCount -= 1;
+
+      this.copyState();
    }
 
    /**
@@ -367,6 +437,10 @@ class GestureEvent {
     * @returns {void} - 无返回值
     */
    registerEventListener(element, type, callback) {
+      if (eventConditions[type] == undefined) {
+         if (debug) console.error(`event type ${type} not found`);
+         throw new Error(`event type ${type} not found`);
+      }
 
       if (!element[EVENTLIST]) {
          element[EVENTLIST] = {};
@@ -384,13 +458,13 @@ class GestureEvent {
       if (callback.name != '') {
          // 将未修饰回调函数和修饰后的回调函数的对应关系保存起来
          if (!element[CBMAPPING]) {
-            element[CBMAPPING] = new WeakMap;
+            element[CBMAPPING] = new Map;
             boundcallback = callback.bind(element);
             element[CBMAPPING].set(callback, {
                boundcallback: boundcallback,
                count: 1
             });
-         } else if (element[CBMAPPING].has(callback)) {
+         } else if (element[CBMAPPING].has(callback)) { // 如果已经注册过了，直接取出来，计数加一，debug模式下输出重复注册警告
             if (debug) console.warn('callback already registered\n', callback);
             const temp = element[CBMAPPING].get(callback);
             boundcallback = temp.boundcallback;
@@ -441,7 +515,9 @@ class GestureEvent {
 
          if (debug) console.log('eventList:', element[EVENTLIST]);
       } else {
-         console.error(`callback not found\n`, `eventList:`, element[EVENTLIST], '\n', `callback:`, callback);
+         if (debug)
+            console.error(`callback not found\n`, `eventList:`, element[EVENTLIST], '\n', `callback:`, callback);
+         throw new Error('callback not found');
       }
    }
 
@@ -491,15 +567,11 @@ class GestureEvent {
     * @param {String} trigger - 触发器, 用于筛选符合触发条件的事件
     */
    static dispatchEvent(element, trigger) {
-      const keys = Object.keys(element[EVENTLIST]);
-      let activeQueue = keys.filter(type => {
-         // 执行eventConditions中对应的条件函数
-         return eventConditions[type](GestureEvent.eventState, GestureEvent.lastEventState, trigger);
-      });
-      if (activeQueue.length != 0)
-         activeQueue.forEach(
-            type => element[EVENTLIST][type].forEach(callback => callback(GestureEvent.outEventState))
-         );
+      for (const type of Object.keys(element[EVENTLIST])) {
+         if (eventConditions[type](GestureEvent.eventState, GestureEvent.lastEventState, trigger)) {
+            element[EVENTLIST][type].forEach(callback => callback(GestureEvent.outEventState));
+         }
+      }
    }
 
 
