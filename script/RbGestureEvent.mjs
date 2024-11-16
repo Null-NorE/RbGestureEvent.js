@@ -139,6 +139,7 @@ const eventConditions = {
    /* dragEvent */
    'dragstart': (ev, lev, tri) => {
       if (tri == 'move') {
+         // 判断是否是单指操作，是否是第一次移动触发，是否移动了
          const isSinglePointer = ev.pointerCount == 1;
          const isFirstMove = ev.pointers[ev.originEvent.pointerId].firstMove;
          const isMove = ev.pointers[ev.originEvent.pointerId].move;
@@ -147,9 +148,10 @@ const eventConditions = {
    },
    'dragmove': (ev, lev, tri) => {
       if (tri == 'move') {
+         // 判断是否是单指操作，是否不是第一次移动触发，是否移动了
          const isSinglePointer = ev.pointerCount == 1;
-         const isMove = ev.pointers[ev.originEvent.pointerId].move;
          const isNotFirstMove = !ev.pointers[ev.originEvent.pointerId].firstMove;
+         const isMove = ev.pointers[ev.originEvent.pointerId].move;
          return isSinglePointer && isMove && isNotFirstMove;
       } else return false;
    },
@@ -226,17 +228,85 @@ const eventConditions = {
    },
 
    /* pinchEvent */
-   'pinchstart': (ev, lev, tri) => { },
-   'pinchmove': (ev, lev, tri) => { },
-   'pinchend': (ev, lev, tri) => { },
+   'pinchstart': (ev, lev, tri) => {
+      if (tri == 'move') {
+         // 判断是否是双指操作，是否是第一次移动触发，是否移动了，两指间距是否改变了
+         const isTwoPointer = ev.pointerCount == 2;
+         const isFirstMove = ev.pointers[ev.originEvent.pointerId].firstMove;
+         const isMove = ev.pointers[ev.originEvent.pointerId].move;
+         const isZoom = Math.abs(ev.scale - 1) > 0.1;
+         return isTwoPointer && isFirstMove && isMove && isZoom;
+      } else return false;
+   },
+   'pinchmove': (ev, lev, tri) => {
+      if (tri == 'move') {
+         // 判断是否是双指操作，是否不是第一次移动触发 ，是否移动了，两指间距是否改变了
+         const isTwoPointer = ev.pointerCount == 2;
+         const isMove = ev.pointers[ev.originEvent.pointerId].move;
+         const isNotFirstMove = !ev.pointers[ev.originEvent.pointerId].firstMove;
+         const isZoom = Math.abs(ev.scale - 1) > 0.1;
+         return isTwoPointer && isMove && isNotFirstMove && isZoom;
+      } else return false;
+   },
+   'pinchend': (() => {
+      let isStart = false;
+      return (ev, lev, tri) => {
+         if (eventConditions['pinchstart'](ev, lev, tri)) {
+            isStart = true;
+         }
+         if ((isStart && tri == 'up') || (tri == 'down' && ev.pointerCount > 2)) {
+            isStart = false;
+            return true;
+         } else return false;
+      }
+   })(),
    'pinchcancel': (ev, lev, tri) => { },
-   'pinchin': (ev, lev, tri) => { },
-   'pinchout': (ev, lev, tri) => { },
+   'pinchin': (ev, lev, tri) => {
+      if (eventConditions['pinchmove'](ev, lev, tri)) {
+         const isPinchIn = ev.scale < 1;
+         return isPinchIn;
+      } else return false;
+   },
+   'pinchout': (ev, lev, tri) => {
+      if (eventConditions['pinchmove'](ev, lev, tri)) {
+         const isPinchOut = ev.scale > 1;
+         return isPinchOut;
+      } else return false
+   },
 
    /* rotateEvent */
-   'rotatestart': (ev, lev, tri) => { },
-   'rotatemove': (ev, lev, tri) => { },
-   'rotateend': (ev, lev, tri) => { },
+   'rotatestart': (ev, lev, tri) => {
+      if (tri == 'move') {
+         // 判断是否是双指操作，是否是第一次移动触发，是否移动了，两指间角度是否改变了
+         const isTwoPointer = ev.pointerCount == 2;
+         const isFirstMove = ev.pointers[ev.originEvent.pointerId].firstMove;
+         const isMove = ev.pointers[ev.originEvent.pointerId].move;
+         const isRotate = Math.abs(ev.refAngle) > 5;
+         return isTwoPointer && isFirstMove && isMove && isRotate;
+      } else return false;
+   },
+   'rotatemove': (ev, lev, tri) => {
+      if (tri == 'move') {
+         // 判断是否是双指操作，是否不是第一次移动触发 ，是否移动了，两指间角度是否改变了
+         const isTwoPointer = ev.pointerCount == 2;
+         const isMove = ev.pointers[ev.originEvent.pointerId].move;
+         const isNotFirstMove = !ev.pointers[ev.originEvent.pointerId].firstMove;
+         const isRotate = Math.abs(ev.refAngle) > 5;
+         return isTwoPointer && isMove && isNotFirstMove && isRotate;
+      } else return false;
+   },
+   'rotateend': (() => {
+      let isStart = false;
+      return (ev, lev, tri) => {
+         if (eventConditions['rotatestart'](ev, lev, tri)) {
+            isStart = true;
+         }
+         if ((isStart && tri == 'up') || (tri == 'down' && ev.pointerCount > 2)) {
+            isStart = false;
+            return true;
+         } else return false;
+      }
+   })(),
    'rotatecancel': (ev, lev, tri) => { },
 };
 
@@ -471,6 +541,7 @@ class GestureEvent {
          throw new Error(`event type ${type} not found`);
       }
 
+      // 如果元素没有事件列表，添加事件监听器，否则直接添加事件
       if (!element[EVENTLIST]) {
          element[EVENTLIST] = {};
          element.addEventListener('pointerdown', GestureEvent.downdispatch, true);
@@ -544,8 +615,7 @@ class GestureEvent {
 
          if (debug) console.log('eventList:', element[EVENTLIST]);
       } else {
-         if (debug)
-            console.error(`callback not found\n`, `eventList:`, element[EVENTLIST], '\n', `callback:`, callback);
+         if (debug) console.error(`callback not found\n`, `eventList:`, element[EVENTLIST], '\n', `callback:`, callback);
          throw new Error('callback not found');
       }
    }
