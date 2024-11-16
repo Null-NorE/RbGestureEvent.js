@@ -84,13 +84,13 @@ const eventConditions = {
          if (tri == 'up') {
             const pointer = lev.pointers[ev.upponiterId];
             if (eventConditions['click'](ev, lev, tri)) {
-               const nowTime = new Date;
+               const nowTime = Date.now();
                if (nowTime - lastClickTime <= 550 && GestureEvent.eDistance(pointer.location, lastClickLocation) <= 20) {
                   clickCount += 1;
                } else {
                   clickCount = 1;
                }
-               lastClickTime = new Date;
+               lastClickTime = Date.now();
                lastClickLocation = [...pointer.location];
             }
             if (clickCount == 2) {
@@ -197,7 +197,7 @@ class GestureEvent {
       GestureEvent.eventState.originEvent = null;
 
       GestureEvent.lastEventState = structuredClone(GestureEvent.eventState);
-      GestureEvent.lastEventState.time = new Date;
+      GestureEvent.lastEventState.time = Date.now();
       GestureEvent.lastEventState.originEvent = event;
 
       GestureEvent.outEventState = structuredClone(GestureEvent.eventState);
@@ -219,7 +219,7 @@ class GestureEvent {
       eventState.originEvent = event;
 
       // 设置事件状态的时间和类型
-      eventState.time = new Date;
+      eventState.time = Date.now();
       eventState.eventType = 'down';
 
       // 初始化触摸点信息
@@ -236,7 +236,7 @@ class GestureEvent {
 
       // 处理一个触摸点的情况
       if (eventState.pointerCount == 0) {
-         eventState.startTime = new Date;
+         eventState.startTime = Date.now();
       }
 
       // 处理两个及以上触摸点的情况
@@ -274,7 +274,7 @@ class GestureEvent {
          const id = event.pointerId;
          const pointer = eventState.pointers[id];
 
-         eventState.time = new Date;
+         eventState.time = Date.now();
          eventState.eventType = 'move';
 
          /* 如果还在移动就取消清零速度 */
@@ -289,7 +289,7 @@ class GestureEvent {
          pointer.location = [event.clientX, event.clientY];
          pointer.displacement = [event.clientX - pointer.startLocation[0], event.clientY - pointer.startLocation[1]];
 
-         const deltaTime = new Date - lastEventState.time;
+         const deltaTime = Date.now() - lastEventState.time;
          pointer.velocity = [
             (pointer.location[0] - lastEventState.pointers[id].location[0]) / deltaTime,
             (pointer.location[1] - lastEventState.pointers[id].location[1]) / deltaTime,
@@ -320,15 +320,14 @@ class GestureEvent {
 
       const eventState = GestureEvent.eventState;
       eventState.originEvent = event;
-      
+
       const id = event.pointerId;
       eventState.upponiterId = id;
       delete eventState.pointers[id];
 
-      eventState.time = new Date;
+      eventState.time = Date.now();
       eventState.eventType = 'up';
       eventState.pointerCount -= 1;
-
    }
 
    /**
@@ -358,10 +357,15 @@ class GestureEvent {
          if (!element[CBMAPPING]) {
             element[CBMAPPING] = new WeakMap;
             boundcallback = callback.bind(element);
-            element[CBMAPPING].set(callback, boundcallback);
+            element[CBMAPPING].set(callback, {
+               boundcallback: boundcallback,
+               count: 1
+            });
          } else if (element[CBMAPPING].has(callback)) {
             if (debug) console.warn('callback already registered');
-            boundcallback = element[CBMAPPING].get(callback);
+            const temp = element[CBMAPPING].get(callback);
+            boundcallback = temp.boundcallback;
+            temp.count += 1;
          }
       } else boundcallback = callback.bind(element);
 
@@ -387,8 +391,13 @@ class GestureEvent {
       const index = list.indexOf(element[CBMAPPING].get(callback));
       if (index != -1) {
          list.splice(index, 1);
-         if (element[CBMAPPING].has(callback))
-            element[CBMAPPING].delete(callback);
+         if (element[CBMAPPING].has(callback)) {
+            const temp = element[CBMAPPING].get(callback);
+            temp.count -= 1;
+            if (temp.count == 0) {
+               element[CBMAPPING].delete(callback);
+            }
+         }
 
          if (element[EVENTLIST][type].length == 0) {
             delete element[EVENTLIST][type];
