@@ -9,35 +9,129 @@
     body {
       margin: 0;
       padding: 0;
-      background-color: #f0f0f0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      /* background-color: #f0f0f0; */
+      background-color: #1c1c1c;
     }
 
-    #mid-out {
+    #mid-box {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      position: relative;
     }
 
-    #mid-in {
-      width: 300px;
-      height: 300px;
-      background-color: #323232;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    #main-touch {
+      position: relative;
+      width: 20rem;
+      height: 20rem;
+      max-width: 80vmin;
+      max-height: 80vmin;
+      background-color: #303030;
+      border: #2c2c2c solid 1px;
+      box-sizing: border-box;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 20px;
-      color: #333;
+      flex-direction: column;
+      transform: scale(1);
+    }
+
+    #main-touch:hover {
+      transform: scale(1.1);
+      cursor: pointer;
+    }
+    #main-touch:active {
+      cursor: grabbing;
+    }
+
+    #handle {
+      width: 20%;
+      height: 20%;
+      background-color: #f0f0f022;
+      border-radius: 999px;
+    }
+
+    .anim {
+      transition-property: position, transform;
+      transition-duration: 0s, 1s;
+    }
+
+    #title {
+      margin-bottom: 10%;
+      width: 100%;
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 100;
+      color: #cacaca;
+    }
+
+    #github-link {
+      margin-top: 10%;
+      width: 100%;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 100;
+      color: #1c1c1c;
+      text-decoration: none;
+      background-color: #f0f0f0;
+      padding: 0.5rem;
+    }
+
+    #tip {
+      position: absolute;
+      bottom: 4%;
+      font-size: 1rem;
+      font-weight: 100;
+      color: #cacaca;
+      transition-duration: 0.5s;
+      opacity: 0;
+    }
+
+    #main-touch:hover #tip {
+      opacity: 1;
+    }
+
+    #below {
+      position: absolute;
+      width: 20rem;
+      height: 20rem;
+      max-width: 80vmin;
+      max-height: 80vmin;
+      background-color: #f0f0f0;
+      box-shadow: 0 0 10px rgb(255, 255, 255);
+      box-shadow: 0 0 30px rgb(255, 255, 255);
+      box-shadow: 0 0 90px rgb(255, 255, 255);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #tip-bottom {
+      width: 100%;
+      text-align: center;
+      font-size: 1rem;
+      line-height: 170%;
+      font-weight: 100;
+      color: #1c1c1c;
     }
   </style>
   <script src="./script/main.js" type="module"></script>
 </head>
 
 <body>
-  <div id="mid-out">
-    <div id="mid-in"></div>
+  <div id="mid-box">
+    <div id="below">
+      <div id="tip-bottom">This page is also a demonstration of the project. You can drag and drop this block, or swipe it. Having fun (・ω&lt; )★</div>
+    </div>
+    <div id="main-touch" class="anim">
+      <h2 id="title">RbGestureEvent.js</h2>
+      <a id="github-link" href="https://github.com/Null-NorE/RbGestureEvent">To Github</a>
+      <div id="tip">Drag It</div>
+    </div>
   </div>
 </body>
 

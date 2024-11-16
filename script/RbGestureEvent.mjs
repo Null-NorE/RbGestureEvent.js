@@ -49,7 +49,7 @@ class EventState {
    startTime = Date.now();
 
    pointers = [];
-   upponiterId = -1;
+   releasePointer = [];
    pointerCount = 0;
 
    originEvent = new PointerEvent('none');
@@ -74,7 +74,7 @@ const eventConditions = {
    'click': (ev, lev, tri) => {
       if (eventConditions['release'](ev, lev, tri) && ev.pointerCount == 0) {
          const isInTime = ev.time - ev.startTime <= 500;
-         const isMove = lev.pointers[ev.upponiterId].move == false;
+         const isMove = ev.releasePointer.move == false;
          return isInTime && isMove;
       } else return false;
    },
@@ -84,7 +84,7 @@ const eventConditions = {
       let lastClickLocation = [0, 0];
       return (ev, lev, tri) => {
          if (tri == 'up') {
-            const pointer = lev.pointers[ev.upponiterId];
+            const pointer = ev.releasePointer;
             // 如果是点击事件
             if (eventConditions['click'](ev, lev, tri)) {
                const nowTime = Date.now();
@@ -196,33 +196,33 @@ const eventConditions = {
    /* swipeEvent */
    'swipeleft': (ev, lev, tri) => {
       if (tri == 'up') {
-         const isLeftEnough = lev.pointers[ev.upponiterId].displacement[0] < -10;
-         const isMove = lev.pointers[ev.upponiterId].move;
-         const velocityEnough = lev.pointers[ev.upponiterId].velocity[0] < -0.3;
+         const isLeftEnough = ev.releasePointer.displacement[0] < -10;
+         const isMove = ev.releasePointer.move;
+         const velocityEnough = ev.releasePointer.velocity[0] < -0.3;
          return isLeftEnough && isMove && velocityEnough;
       } else return false;
    },
    'swiperight': (ev, lev, tri) => {
       if (tri == 'up') {
-         const isRightEnough = lev.pointers[ev.upponiterId].displacement[0] > 10;
-         const isMove = lev.pointers[ev.upponiterId].move;
-         const velocityEnough = lev.pointers[ev.upponiterId].velocity[0] > 0.3;
+         const isRightEnough = ev.releasePointer.displacement[0] > 10;
+         const isMove = ev.releasePointer.move;
+         const velocityEnough = ev.releasePointer.velocity[0] > 0.3;
          return isRightEnough && isMove && velocityEnough;
       } else return false;
    },
    'swipeup': (ev, lev, tri) => {
       if (tri == 'up') {
-         const isUpEnough = lev.pointers[ev.upponiterId].displacement[1] < -10;
-         const isMove = lev.pointers[ev.upponiterId].move;
-         const velocityEnough = lev.pointers[ev.upponiterId].velocity[1] < -0.3;
+         const isUpEnough = ev.releasePointer.displacement[1] < -10;
+         const isMove = ev.releasePointer.move;
+         const velocityEnough = ev.releasePointer.velocity[1] < -0.3;
          return isUpEnough && isMove && velocityEnough;
       } else return false;
    },
    'swipedown': (ev, lev, tri) => {
       if (tri == 'up') {
-         const isDownEnough = lev.pointers[ev.upponiterId].displacement[1] > 10;
-         const isMove = lev.pointers[ev.upponiterId].move;
-         const velocityEnough = lev.pointers[ev.upponiterId].velocity[1] > 0.3;
+         const isDownEnough = ev.releasePointer.displacement[1] > 10;
+         const isMove = ev.releasePointer.move;
+         const velocityEnough = ev.releasePointer.velocity[1] > 0.3;
          return isDownEnough && isMove && velocityEnough;
       } else return false;
    },
@@ -519,11 +519,31 @@ class GestureEvent {
       eventState.originEvent = event;
 
       const id = event.pointerId;
-      eventState.upponiterId = id;
-      delete eventState.pointers[id];
+      eventState.releasePointer = eventState.pointers[id];
+      eventState.pointers[id] = null;
 
       eventState.time = Date.now();
       eventState.eventType = 'up';
+      eventState.pointerCount -= 1;
+
+      this.copyState();
+   }
+
+   pointerCancel = (event) => {
+      this.updateLastState();
+
+      const eventState = GestureEvent.eventState;
+      eventState.originEvent = event;
+
+      // const id = event.pointerId;
+      // eventState.upponiterId = id;
+      // delete eventState.pointers[id];
+      const id = event.pointerId;
+      eventState.releasePointer = eventState.pointers[id];
+      eventState.pointers[id] = null;
+
+      eventState.time = Date.now();
+      eventState.eventType = 'cancel';
       eventState.pointerCount -= 1;
 
       this.copyState();
@@ -533,7 +553,7 @@ class GestureEvent {
     * 注册事件
     * @param {HTMLElement} element 元素
     * @param {String} type 事件类型
-    * @param {Function} callback 回调函数
+    * @param {(eventState: EventState) => void} callback 回调函数
     * @returns {void} - 无返回值
     */
    registerEventListener(element, type, callback) {
