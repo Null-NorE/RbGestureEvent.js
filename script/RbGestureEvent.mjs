@@ -468,7 +468,6 @@ class GestureEvent {
     */
    registerEventListener(element, type, callback) {
       if (eventConditions[type] == undefined) {
-         if (debug) console.error(`event type ${type} not found`);
          throw new Error(`event type ${type} not found`);
       }
 
@@ -548,6 +547,30 @@ class GestureEvent {
          if (debug)
             console.error(`callback not found\n`, `eventList:`, element[EVENTLIST], '\n', `callback:`, callback);
          throw new Error('callback not found');
+      }
+   }
+
+   /**
+    * @description 设置事件触发条件
+    * @param {String} type - 事件类型
+    * @param {(ev: EventState, lev: EventState, tri: String) => Boolean} condition - 条件函数
+    */
+   setCondition(type, condition) {
+      if (eventConditions[type]) {
+         if (debug) console.warn(`event type ${type} already exists, will be overwritten`);
+      }
+      eventConditions[type] = condition;
+   }
+
+   /**
+    * @description 移除事件触发条件
+    * @param {String} type - 事件类型
+    */
+   removeCondition(type) {
+      if (eventConditions[type]) {
+         delete eventConditions[type];
+      } else {
+         throw new Error(`event type ${type} not found`);
       }
    }
 
