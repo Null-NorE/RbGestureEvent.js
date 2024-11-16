@@ -141,14 +141,16 @@ const eventConditions = {
       if (tri == 'move') {
          const isSinglePointer = ev.pointerCount == 1;
          const isFirstMove = ev.pointers[ev.originEvent.pointerId].firstMove;
-         return isSinglePointer && isFirstMove;
+         const isMove = ev.pointers[ev.originEvent.pointerId].move;
+         return isSinglePointer && isFirstMove && isMove;
       } else return false;
    },
    'dragmove': (ev, lev, tri) => {
       if (tri == 'move') {
          const isSinglePointer = ev.pointerCount == 1;
          const isMove = ev.pointers[ev.originEvent.pointerId].move;
-         return isSinglePointer && isMove;
+         const isNotFirstMove = !ev.pointers[ev.originEvent.pointerId].firstMove;
+         return isSinglePointer && isMove && isNotFirstMove;
       } else return false;
    },
    'dragend': (() => {
@@ -190,10 +192,38 @@ const eventConditions = {
    },
 
    /* swipeEvent */
-   'swipeleft': (ev, lev, tri) => { },
-   'swiperight': (ev, lev, tri) => { },
-   'swipeup': (ev, lev, tri) => { },
-   'swipedown': (ev, lev, tri) => { },
+   'swipeleft': (ev, lev, tri) => {
+      if (tri == 'up') {
+         const isLeftEnough = lev.pointers[ev.upponiterId].displacement[0] < -10;
+         const isMove = lev.pointers[ev.upponiterId].move;
+         const velocityEnough = lev.pointers[ev.upponiterId].velocity[0] < -0.3;
+         return isLeftEnough && isMove && velocityEnough;
+      } else return false;
+   },
+   'swiperight': (ev, lev, tri) => {
+      if (tri == 'up') {
+         const isRightEnough = lev.pointers[ev.upponiterId].displacement[0] > 10;
+         const isMove = lev.pointers[ev.upponiterId].move;
+         const velocityEnough = lev.pointers[ev.upponiterId].velocity[0] > 0.3;
+         return isRightEnough && isMove && velocityEnough;
+      } else return false;
+   },
+   'swipeup': (ev, lev, tri) => {
+      if (tri == 'up') {
+         const isUpEnough = lev.pointers[ev.upponiterId].displacement[1] < -10;
+         const isMove = lev.pointers[ev.upponiterId].move;
+         const velocityEnough = lev.pointers[ev.upponiterId].velocity[1] < -0.3;
+         return isUpEnough && isMove && velocityEnough;
+      } else return false;
+   },
+   'swipedown': (ev, lev, tri) => {
+      if (tri == 'up') {
+         const isDownEnough = lev.pointers[ev.upponiterId].displacement[1] > 10;
+         const isMove = lev.pointers[ev.upponiterId].move;
+         const velocityEnough = lev.pointers[ev.upponiterId].velocity[1] > 0.3;
+         return isDownEnough && isMove && velocityEnough;
+      } else return false;
+   },
 
    /* pinchEvent */
    'pinchstart': (ev, lev, tri) => { },

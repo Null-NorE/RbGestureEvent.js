@@ -25,16 +25,33 @@ const main = event => {
    gesture.registerEventListener(button, 'click', clickf);
    gesture.cancelEventListener(button, 'click', clickf);
    gesture.cancelEventListener(button, 'click', clickf);
-   gesture.registerEventListener(button, 'press', event => console.log('press'));
-   gesture.registerEventListener(button, 'doubleclick', event => console.log('double click'));
-   gesture.registerEventListener(button, 'longtouch', event => console.log('long touch'));
-   gesture.registerEventListener(button, 'dragstart', event => console.log('drag start'));
-   gesture.registerEventListener(button, 'dragend', event => console.log('drag end'));
-   gesture.registerEventListener(button, 'dragmove', event => console.log('drag move'));
-   gesture.registerEventListener(button, 'dragleft', event => console.log('drag ←'));
-   gesture.registerEventListener(button, 'dragright', event => console.log('drag →'));
-   gesture.registerEventListener(button, 'dragup', event => console.log('drag ↑'));
-   gesture.registerEventListener(button, 'dragdown', event => console.log('drag ↓'));
+   [
+      // 'press',
+      // 'doubleclick',
+      // 'longtouch',
+      // 'dragstart',
+      // 'dragend',
+      // 'dragmove',
+      // 'dragleft',
+      // 'dragright',
+      // 'dragup',
+      // 'dragdown',
+      'swipeleft',
+      'swiperight',
+      'swipeup',
+      'swipedown',
+   ].forEach(type => {
+      gesture.registerEventListener(button, type, event => {
+         console.log(type);
+      });
+   });
+   button.addEventListener('pointerdown', event => event.preventDefault());
+   button.addEventListener('pointerup', event => event.preventDefault());
+   button.addEventListener('pointermove', event => event.preventDefault());
+   button.addEventListener('pointerleave', event => event.preventDefault());
+   button.addEventListener('touchstart', event => event.preventDefault());
+   button.addEventListener('touchend', event => event.preventDefault());
+   button.addEventListener('touchmove', event => event.preventDefault());
 }
 
 window.document.addEventListener('DOMContentLoaded', main);
