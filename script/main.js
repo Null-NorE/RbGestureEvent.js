@@ -40,6 +40,13 @@ const main = event => {
       'swiperight',
       'swipeup',
       'swipedown',
+      'pinchstart',
+      'pinchin',
+      'pinchout',
+      'pinchend',
+      'rotatestart',
+      'rotatemove',
+      'rotateend',
    ].forEach(type => {
       gesture.registerEventListener(button, type, event => {
          console.log(type);
