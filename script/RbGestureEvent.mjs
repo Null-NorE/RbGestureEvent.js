@@ -221,34 +221,42 @@ const eventConditions = {
    /* swipeEvent */
    'swipeleft': (ev, lev, tri) => {
       if (tri == 'up') {
-         const isLeftEnough = ev.triggerPointer.displacement[0] < -10;
+         const [disX, disY] = ev.triggerPointer.displacement;
+         const isLeftEnough = disX < -10;
+         const isLeftMost = disX < 0 && Math.abs(disX) > Math.abs(disY);
          const isMove = ev.triggerPointer.move;
          const velocityEnough = ev.triggerPointer.velocity[0] < -0.3;
-         return isLeftEnough && isMove && velocityEnough;
+         return isMove && isLeftMost && isLeftEnough && velocityEnough;
       } else return false;
    },
    'swiperight': (ev, lev, tri) => {
       if (tri == 'up') {
-         const isRightEnough = ev.triggerPointer.displacement[0] > 10;
+         const [disX, disY] = ev.triggerPointer.displacement;
+         const isRightEnough = disX > 10;
+         const isRightMost = disX > 0 && Math.abs(disX) > Math.abs(disY);
          const isMove = ev.triggerPointer.move;
          const velocityEnough = ev.triggerPointer.velocity[0] > 0.3;
-         return isRightEnough && isMove && velocityEnough;
+         return isMove && isRightMost && isRightEnough && velocityEnough;
       } else return false;
    },
    'swipeup': (ev, lev, tri) => {
       if (tri == 'up') {
-         const isUpEnough = ev.triggerPointer.displacement[1] < -10;
+         const [disX, disY] = ev.triggerPointer.displacement;
+         const isUpEnough = disY < -10;
+         const isUpMost = disY < 0 && Math.abs(disY) > Math.abs(disX);
          const isMove = ev.triggerPointer.move;
          const velocityEnough = ev.triggerPointer.velocity[1] < -0.3;
-         return isUpEnough && isMove && velocityEnough;
+         return isMove && isUpMost && isUpEnough && velocityEnough;
       } else return false;
    },
    'swipedown': (ev, lev, tri) => {
       if (tri == 'up') {
-         const isDownEnough = ev.triggerPointer.displacement[1] > 10;
+         const [disX, disY] = ev.triggerPointer.displacement;
+         const isDownEnough = disY > 10;
+         const isDownMost = disY > 0 && Math.abs(disY) > Math.abs(disX);
          const isMove = ev.triggerPointer.move;
          const velocityEnough = ev.triggerPointer.velocity[1] > 0.3;
-         return isDownEnough && isMove && velocityEnough;
+         return isMove && isDownMost && isDownEnough && velocityEnough;
       } else return false;
    },
 
