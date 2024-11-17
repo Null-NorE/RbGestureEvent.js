@@ -57,7 +57,7 @@ body {
   width: 100%;
   text-align: center;
   font-size: 2rem;
-  font-weight: 100;
+  font-weight: 300;
   color: #cacaca;
 }
 
@@ -66,18 +66,19 @@ body {
   width: 100%;
   text-align: center;
   font-size: 1.5rem;
-  font-weight: 100;
+  font-weight: 300;
   color: #1c1c1c;
   text-decoration: none;
   background-color: #f0f0f0;
-  padding: 0.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 #tip {
   position: absolute;
   bottom: 4%;
   font-size: 1rem;
-  font-weight: 100;
+  font-weight: 300;
   color: #cacaca;
   transition-duration: 0.5s;
   opacity: 0;
@@ -107,7 +108,7 @@ body {
   text-align: center;
   font-size: 1rem;
   line-height: 170%;
-  font-weight: 100;
+  font-weight: 300;
   color: #1c1c1c;
 }
 
