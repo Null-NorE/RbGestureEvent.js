@@ -8,9 +8,9 @@
  */
 let debug = false;
 
-const EVENTLIST = Symbol('eventList');
-const LONGTOUCH = Symbol('longtouch');
-const CBMAPPING = Symbol('callbackMapping');
+const EVENTLIST = Symbol.for('eventList');
+const LONGTOUCH = Symbol.for('longtouch');
+const CBMAPPING = Symbol.for('callbackMapping');
 
 /**
  * @name PointerInfo
@@ -222,43 +222,48 @@ const eventConditions = {
    'swipeleft': (ev, lev, tri) => {
       if (tri == 'up') {
          const [disX, disY] = ev.triggerPointer.displacement;
+         const isSinglePointer = ev.pointerCount == 0;
          const isLeftEnough = disX < -10;
          const isLeftMost = disX < 0 && Math.abs(disX) > Math.abs(disY);
          const isMove = ev.triggerPointer.move;
          const velocityEnough = ev.triggerPointer.velocity[0] < -0.3;
-         return isMove && isLeftMost && isLeftEnough && velocityEnough;
+         return isSinglePointer && isMove && isLeftMost && isLeftEnough && velocityEnough;
       } else return false;
    },
    'swiperight': (ev, lev, tri) => {
       if (tri == 'up') {
          const [disX, disY] = ev.triggerPointer.displacement;
+         const isSinglePointer = ev.pointerCount == 0;
          const isRightEnough = disX > 10;
          const isRightMost = disX > 0 && Math.abs(disX) > Math.abs(disY);
          const isMove = ev.triggerPointer.move;
          const velocityEnough = ev.triggerPointer.velocity[0] > 0.3;
-         return isMove && isRightMost && isRightEnough && velocityEnough;
+         return isSinglePointer && isMove && isRightMost && isRightEnough && velocityEnough;
       } else return false;
    },
    'swipeup': (ev, lev, tri) => {
       if (tri == 'up') {
          const [disX, disY] = ev.triggerPointer.displacement;
+         const isSinglePointer = ev.pointerCount == 0;
          const isUpEnough = disY < -10;
          const isUpMost = disY < 0 && Math.abs(disY) > Math.abs(disX);
          const isMove = ev.triggerPointer.move;
          const velocityEnough = ev.triggerPointer.velocity[1] < -0.3;
-         return isMove && isUpMost && isUpEnough && velocityEnough;
+         return isSinglePointer && isMove && isUpMost && isUpEnough && velocityEnough;
       } else return false;
    },
    'swipedown': (ev, lev, tri) => {
       if (tri == 'up') {
          const [disX, disY] = ev.triggerPointer.displacement;
+         const isSinglePointer = ev.pointerCount == 0;
          const isDownEnough = disY > 10;
          const isDownMost = disY > 0 && Math.abs(disY) > Math.abs(disX);
          const isMove = ev.triggerPointer.move;
          const velocityEnough = ev.triggerPointer.velocity[1] > 0.3;
-         return isMove && isDownMost && isDownEnough && velocityEnough;
+         return isSinglePointer && isMove && isDownMost && isDownEnough && velocityEnough;
       } else return false;
    },
+
 
    /* pinchEvent */
    'pinchstart': (ev, lev, tri) => {
@@ -412,6 +417,10 @@ class GestureEvent {
       });
    }
 
+   /**
+    * @description 设置调试模式
+    * @param {Boolean} _debug - 是否开启调试模式
+    */
    setDebug(_debug) {
       debug = _debug;
    }
@@ -444,22 +453,68 @@ class GestureEvent {
    }
 
    /**
-    * @name 处理触摸开始事件
+    * 更新指针状态数据
+    * @param {PointerEvent} event - 指针事件
+    * @param {EventState} eventState - 当前事件状态
+    * @param {String} eventType - 事件类型 (down/move/up/cancel)
+    * @private
+    */
+   updateEventState(event, eventState, eventType) {
+      const id = event.pointerId;
+      
+      eventState.originEvent = event;
+      eventState.time = Date.now();
+      eventState.eventType = eventType;
+      eventState.triggerPointer = eventState.pointers[id];
+   }
+
+   /**
+    * 处理双指手势计算
+    * @param {EventState} eventState - 当前事件状态
+    * @private 
+    */
+   updateTwoPointerState(eventState) {
+      const pointers = [...eventState.pointers.values()];
+      const twoPointerLocation = pointers.map(p => [p.clientX, p.clientY]);
+
+      eventState.startLength = GestureEvent.eDistance(twoPointerLocation);
+      eventState.startAngle = GestureEvent.refAngle(twoPointerLocation); 
+      eventState.midPoint = GestureEvent.midPoint(twoPointerLocation);
+   }
+
+   /**
+    * 更新指针移动速度
+    * @param {Object} pointer - 指针状态对象
+    * @param {EventState} lastState - 上一次事件状态
+    * @param {Number} id - 指针ID
+    * @private
+    */
+   updateVelocity(pointer, lastState, id) {
+      clearTimeout(pointer.velocityTimeOut);
+
+      pointer.velocityTimeOut = setTimeout(() => {
+         pointer.velocity = [0, 0];
+      }, 100);
+
+      const deltaTime = Date.now() - lastState.time;
+      pointer.velocity = [
+         (pointer.location[0] - lastState.pointers[id].location[0]) / deltaTime,
+         (pointer.location[1] - lastState.pointers[id].location[1]) / deltaTime
+      ];
+   }
+
+   /**
+    * 指针按下事件处理器
     * @param {PointerEvent} event 
     */
    pointerdown = (event) => {
       this.updateLastState();
-
-      const id = event.pointerId;
       const eventState = GestureEvent.eventState;
+      
+      this.updateEventState(event, eventState, 'down');
 
-      eventState.originEvent = event;
-
-      // 设置事件状态的时间和类型
-      eventState.time = Date.now();
-      eventState.eventType = 'down';
-
-      // 初始化触摸点信息
+      // 初始化新的指针数据
+      const id = event.pointerId;
       eventState.pointers[id] = {
          move: false,
          firstMove: false,
@@ -467,134 +522,85 @@ class GestureEvent {
          displacement: [0, 0],
          location: [event.clientX, event.clientY],
          startLocation: [event.clientX, event.clientY],
-
-         // 设置空计时器，防止之后无脑clear的时候出问题
          velocityTimeOut: setTimeout(() => { }, 100)
       };
 
       eventState.triggerPointer = eventState.pointers[id];
 
-      // 处理一个触摸点的情况
-      if (eventState.pointerCount == 0) {
+      if (eventState.pointerCount === 0) {
          eventState.startTime = Date.now();
       }
-
-      // 处理两个及以上触摸点的情况
-      if (eventState.pointerCount == 1) {
-         const twoPointerLocation = [
-            [eventState.pointers.values[0].clientX, eventState.pointers.values[0].clientY],
-            [eventState.pointers.values[1].clientX, eventState.pointers.values[1].clientY]
-         ];
-
-         // 计算两点间的初始长度和角度
-         eventState.startLength = GestureEvent.eDistance(twoPointerLocation);
-         eventState.startAngle = GestureEvent.refAngle(twoPointerLocation);
-
-         // 计算两点间的中点
-         eventState.midPoint = GestureEvent.midPoint(twoPointerLocation);
+      
+      if (eventState.pointerCount === 1) {
+         this.updateTwoPointerState(eventState);
       }
 
-      // 增加触摸点计数
-      eventState.pointerCount += 1;
+      eventState.pointerCount++;
       this.copyState();
    }
 
    /**
-    * @name 处理触摸移动事件
-    * @param {PointerEvent} event 
+    * 指针移动事件处理器  
+    * @param {PointerEvent} event
     */
    pointermove = (event) => {
       this.updateLastState();
-
       const eventState = GestureEvent.eventState;
-      const lastEventState = GestureEvent.lastEventState;
+      const lastState = GestureEvent.lastEventState;
 
-      eventState.originEvent = event;
+      if (eventState.pointerCount < 1) return;
 
-      if (eventState.pointerCount >= 1) {
-         const id = event.pointerId;
-         const pointer = eventState.pointers[id];
-
-         eventState.time = Date.now();
-         eventState.eventType = 'move';
-
-         /* 如果还在移动就取消清零速度 */
-         clearTimeout(pointer.velocityTimeOut);
-
-         /* 100ms之后清零速度（符合条件时会被上面阻止） */
-         pointer.velocityTimeOut = setTimeout(() => {
-            pointer.velocity = [0, 0];
-         }, 100);
-
-         pointer.firstMove = !pointer.move; // 记录是否是第一次移动，第一次移动时此时的move为false，先赋值让firtMove下一次才为true
-         pointer.move = true;
-         pointer.location = [event.clientX, event.clientY];
-         pointer.displacement = [event.clientX - pointer.startLocation[0], event.clientY - pointer.startLocation[1]];
-
-         const deltaTime = Date.now() - lastEventState.time;
-         pointer.velocity = [
-            (pointer.location[0] - lastEventState.pointers[id].location[0]) / deltaTime,
-            (pointer.location[1] - lastEventState.pointers[id].location[1]) / deltaTime,
-         ];
-
-         eventState.triggerPointer = eventState.pointers[id];
-
-         if (eventState.pointerCount == 2) {
-            const twoPointerLocationg = [
-               [eventState.pointers.values[0].clientX, eventState.pointers.values[0].clientY],
-               [eventState.pointers.values[1].clientX, eventState.pointers.values[1].clientY]
-            ];
-
-            const nowlenth = GestureEvent.eDistance(twoPointerLocationg);
-            const nowangle = GestureEvent.refAngle(twoPointerLocationg);
-
-            eventState.scale = nowlenth / eventState.startLength;
-            eventState.refAngle = nowangle - eventState.startAngle;
-            eventState.midPoint = GestureEvent.midPoint(twoPointerLocationg);
-         }
-
-         this.copyState();
-      }
-   }
-
-   /**
-    * @name 处理触摸结束事件
-    * @param {PointerEvent} event 
-    */
-   pointerup = (event) => {
-      this.updateLastState();
-
-      const eventState = GestureEvent.eventState;
-      eventState.originEvent = event;
+      this.updateEventState(event, eventState, 'move');
 
       const id = event.pointerId;
-      eventState.triggerPointer = eventState.pointers[id];
-      eventState.pointers[id] = null;
+      const pointer = eventState.pointers[id];
 
-      eventState.time = Date.now();
-      eventState.eventType = 'up';
-      eventState.pointerCount -= 1;
+      // 更新指针状态
+      pointer.firstMove = !pointer.move;
+      pointer.move = true;
+      pointer.location = [event.clientX, event.clientY];
+      pointer.displacement = [
+         event.clientX - pointer.startLocation[0], 
+         event.clientY - pointer.startLocation[1]
+      ];
+
+      this.updateVelocity(pointer, lastState, id);
+
+      if (eventState.pointerCount === 2) {
+         this.updateTwoPointerState(eventState);
+      }
 
       this.copyState();
    }
 
    /**
-    * @name 处理触摸取消事件
+    * 指针抬起事件处理器
     * @param {PointerEvent} event
+    */
+   pointerup = (event) => {
+      this.updateLastState();
+      const eventState = GestureEvent.eventState;
+
+      this.updateEventState(event, eventState, 'up');
+      
+      eventState.pointers[event.pointerId] = null;
+      eventState.pointerCount--;
+
+      this.copyState(); 
+   }
+
+   /**
+    * 指针取消事件处理器
+    * @param {PointerEvent} event 
     */
    pointerCancel = (event) => {
       this.updateLastState();
-
       const eventState = GestureEvent.eventState;
-      eventState.originEvent = event;
 
-      const id = event.pointerId;
-      eventState.triggerPointer = eventState.pointers[id];
-      eventState.pointers[id] = null;
+      this.updateEventState(event, eventState, 'cancel');
 
-      eventState.time = Date.now();
-      eventState.eventType = 'cancel';
-      eventState.pointerCount -= 1;
+      eventState.pointers[event.pointerId] = null;
+      eventState.pointerCount--;
 
       this.copyState();
    }
@@ -767,7 +773,6 @@ class GestureEvent {
       }
    }
 
-
    /**
     * @name 计算两点间距离
     * @param {Array} param0 第一个点的坐标
@@ -799,6 +804,7 @@ class GestureEvent {
    static midPoint = ([x1, y1], [x2, y2]) => [(x1 - x2) / 2, (y1 - y2) / 2];
 }
 
-const _g = new GestureEvent();
+// 使用单例模式
+const gestureInstance = new GestureEvent();
 
-export { _g as RbGestureEvent, EventState as RbEventState };
+export { gestureInstance as RbGestureEvent, EventState as RbEventState };
