@@ -54,14 +54,21 @@ const main = event => {
          console.log(type);
       });
    });
-   button.addEventListener('pointerdown', event => event.preventDefault());
-   button.addEventListener('pointerup', event => event.preventDefault());
-   button.addEventListener('pointermove', event => event.preventDefault());
-   button.addEventListener('pointerleave', event => event.preventDefault());
-   button.addEventListener('touchstart', event => event.preventDefault());
-   button.addEventListener('touchend', event => event.preventDefault());
-   button.addEventListener('touchmove', event => event.preventDefault());
+   [
+      'pointerdown',
+      'pointerup',
+      'pointermove',
+      'pointerleave',
+      'touchstart',
+      'touchend',
+      'touchmove',
+   ].forEach(type => {
+      button.addEventListener(type, event => {
+         event.preventDefault();
+      });
+   });
 
+   swipeRotate(button);
 
    gesture.registerEventListener(touchBox, 'dragend', event => {
       button.style.left = 0;
@@ -71,6 +78,39 @@ const main = event => {
       const pointer = event.pointers[event.originEvent.pointerId];
       button.style.left = pointer.displacement[0] + 'px';
       button.style.top = pointer.displacement[1] + 'px';
+   });
+}
+
+/**
+ * 
+ * @param {HTMLDivElement} element 
+ */
+const swipeRotate = element => {
+   const gesture = RbGestureEvent;
+   const box = element;
+   gesture.registerEventListener(box, 'swipeleft', event => {
+      box.classList.add('swipe-left');
+      setTimeout(() => {
+         box.classList.remove('swipe-left');
+      }, 500);
+   });
+   gesture.registerEventListener(box, 'swiperight', event => {
+      box.classList.add('swipe-right');
+      setTimeout(() => {
+         box.classList.remove('swipe-right');
+      }, 500);
+   });
+   gesture.registerEventListener(box, 'swipeup', event => {
+      box.classList.add('swipe-up');
+      setTimeout(() => {
+         box.classList.remove('swipe-up');
+      }, 500);
+   });
+   gesture.registerEventListener(box, 'swipedown', event => {
+      box.classList.add('swipe-down');
+      setTimeout(() => {
+         box.classList.remove('swipe-down');
+      }, 500);
    });
 }
 
