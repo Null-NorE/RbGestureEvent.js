@@ -66,24 +66,6 @@ const main = event => {
    gesture.registerEventListener(touchBox, 'dragend', event => {
       button.style.left = 0;
       button.style.top = 0;
-
-      /* const buttonWidth = button.offsetWidth;
-      const buttonHeight = button.offsetHeight;
-      const buttonRect = button.getBoundingClientRect();
-      if (buttonRect.left > window.innerWidth / 2 - buttonWidth
-         && buttonRect.top > window.innerHeight / 2 - buttonHeight
-         && buttonRect.right < window.innerWidth / 2 + buttonWidth
-         && buttonRect.bottom < window.innerHeight / 2 + buttonHeight) { // 如果按钮在正中间
-         button.style.transform = 'translate(0, 0)';
-      } else if (buttonRect.left < window.innerWidth / 2 - buttonWidth) { // 如果按钮在右半边
-         button.style.transform = 'translate(-100%, 0)';
-      } else if (buttonRect.right > window.innerWidth / 2 + buttonWidth) { // 如果按钮在左半边
-         button.style.transform = 'translate(100%, 0)';
-      } else if (buttonRect.top < window.innerHeight / 2 - buttonHeight) { // 如果按钮在下半边
-         button.style.transform = 'translate(0, -100%)';
-      } else { // 如果按钮在上半边
-         button.style.transform = 'translate(0, 100%)';
-      } */
    });
    gesture.registerEventListener(touchBox, 'dragmove', event => {
       const pointer = event.pointers[event.originEvent.pointerId];

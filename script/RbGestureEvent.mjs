@@ -13,26 +13,44 @@ const LONGTOUCH = Symbol('longtouch');
 const CBMAPPING = Symbol('callbackMapping');
 
 /**
+ * @name PointerInfo
+ * @description 指针信息类
+ * @class
+ * @member {Boolean} move 是否移动
+ * @member {Boolean} firstMove 是否第一次移动
+ * @member {Array<Number>} velocity 速度
+ * @member {Array<Number>} displacement 指针相对于初始位置的位移
+ * @member {Array<Number>} location 指针当前位置
+ * @member {Array<Number>} startLocation 初始位置
+ * @member {Number} velocityTimeOut 速度清零计时器
+ * @private
+ */
+class PointerInfo {
+   move = false;
+   firstMove = false;
+   velocity = [0, 0];
+   displacement = [0, 0];
+   location = [0, 0];
+   startLocation = [0, 0];
+   velocityTimeOut = setTimeout(() => { }, 100);
+}
+
+/**
  * @name RbEventState
  * @description 事件状态类
  * @class
  * @member {Date} time 事件发生时间
  * @member {String} eventType 事件类型
- * 
  * @member {Number} scale 缩放比例
  * @member {Number} refAngle 参考角
- * @member {Array} midPoint 中点坐标
- * 
+ * @member {Array<Number>} midPoint 中点坐标
  * @member {Number} clickTimes 点击次数
- * 
  * @member {Number} startLenth 初始长度
  * @member {Number} startAngle 初始角度
  * @member {Date} startTime 初始时间
- * 
- * @member {Array} pointers 指针
- * @member {Array} triggerPointer 触发指针
+ * @member {Array<PointerInfo>} pointers 指针
+ * @member {PointerInfo} triggerPointer 触发指针
  * @member {Number} pointerCount 指针数量
- * 
  * @member {PointerEvent} originEvent 原始事件
  */
 class EventState {
@@ -50,7 +68,7 @@ class EventState {
    startTime = Date.now();
 
    pointers = [];
-   triggerPointer = undefined;
+   triggerPointer = new PointerInfo;
    pointerCount = 0;
 
    originEvent = new PointerEvent('none');
