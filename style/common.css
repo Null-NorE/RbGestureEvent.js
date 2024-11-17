@@ -57,26 +57,34 @@ body {
   width: 100%;
   text-align: center;
   font-size: 2rem;
-  font-weight: 300;
+  font-weight: 200;
   color: #cacaca;
 }
 
 #github-link {
-  margin-top: 10%;
-  width: 100%;
+  margin-top: 8%;
   text-align: center;
-  font-size: 1.5rem;
-  font-weight: 300;
-  color: #1c1c1c;
+  font-weight: 200;
   text-decoration: none;
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+  
+  width: 40%;
+  font-size: 1rem;
+  color: #cacaca;
+  border: #cacaca50 solid 0.07rem;
+
+  transition-duration: 0.3s;
+}
+
+#github-link:hover {
   background-color: #f0f0f0;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
+  color: #1c1c1c;
 }
 
 #tip {
   position: absolute;
-  bottom: 4%;
+  bottom: 8%;
   font-size: 1rem;
   font-weight: 300;
   color: #cacaca;
