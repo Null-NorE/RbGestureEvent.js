@@ -30,6 +30,7 @@ const CBMAPPING = Symbol('callbackMapping');
  * @member {Date} startTime 初始时间
  * 
  * @member {Array} pointers 指针
+ * @member {Array} triggerPointer 触发指针
  * @member {Number} pointerCount 指针数量
  * 
  * @member {PointerEvent} originEvent 原始事件
@@ -49,7 +50,7 @@ class EventState {
    startTime = Date.now();
 
    pointers = [];
-   releasePointer = [];
+   triggerPointer = undefined;
    pointerCount = 0;
 
    originEvent = new PointerEvent('none');
@@ -74,7 +75,7 @@ const eventConditions = {
    'click': (ev, lev, tri) => {
       if (eventConditions['release'](ev, lev, tri) && ev.pointerCount == 0) {
          const isInTime = ev.time - ev.startTime <= 500;
-         const isMove = ev.releasePointer.move == false;
+         const isMove = ev.triggerPointer.move == false;
          return isInTime && isMove;
       } else return false;
    },
@@ -84,7 +85,7 @@ const eventConditions = {
       let lastClickLocation = [0, 0];
       return (ev, lev, tri) => {
          if (tri == 'up') {
-            const pointer = ev.releasePointer;
+            const pointer = ev.triggerPointer;
             // 如果是点击事件
             if (eventConditions['click'](ev, lev, tri)) {
                const nowTime = Date.now();
@@ -119,7 +120,7 @@ const eventConditions = {
             // 如果按下时间超过500ms，没有移动，只有一个触摸点，且不是因为抬起导致只剩下一个触摸点的
             const isDelayEnough = Date.now() - ev.startTime >= 500;
             const isSinglePointer = ev.pointerCount == 1;
-            const isMove = ev.pointers[ev.originEvent.pointerId].move == false;
+            const isMove = ev.triggerPointer.move == false;
             const isUp = up;
 
             const isFirstTimes = count == 0; // 避免重复触发
@@ -131,18 +132,13 @@ const eventConditions = {
       }
    })(),
 
-   'pinch': (ev, lev, tri) => { },
-   'rotate': (ev, lev, tri) => { },
-   'drag': (ev, lev, tri) => { },
-   'move': (ev, lev, tri) => { },
-
    /* dragEvent */
    'dragstart': (ev, lev, tri) => {
       if (tri == 'move') {
          // 判断是否是单指操作，是否是第一次移动触发，是否移动了
          const isSinglePointer = ev.pointerCount == 1;
-         const isFirstMove = ev.pointers[ev.originEvent.pointerId].firstMove;
-         const isMove = ev.pointers[ev.originEvent.pointerId].move;
+         const isFirstMove = ev.triggerPointer.firstMove;
+         const isMove = ev.triggerPointer.move;
          return isSinglePointer && isFirstMove && isMove;
       } else return false;
    },
@@ -150,8 +146,8 @@ const eventConditions = {
       if (tri == 'move') {
          // 判断是否是单指操作，是否不是第一次移动触发，是否移动了
          const isSinglePointer = ev.pointerCount == 1;
-         const isNotFirstMove = !ev.pointers[ev.originEvent.pointerId].firstMove;
-         const isMove = ev.pointers[ev.originEvent.pointerId].move;
+         const isNotFirstMove = !ev.triggerPointer.firstMove;
+         const isMove = ev.triggerPointer.move;
          return isSinglePointer && isMove && isNotFirstMove;
       } else return false;
    },
@@ -167,28 +163,39 @@ const eventConditions = {
          } else return false;
       }
    })(),
-   'dragcancel': (ev, lev, tri) => { },
+   'dragcancel': (() => {
+      let isStart = false;
+      return (ev, lev, tri) => {
+         if (eventConditions['dragstart'](ev, lev, tri)) {
+            isStart = true;
+         }
+         if ((isStart && tri == 'cancel') || (tri == 'down' && ev.pointerCount > 1)) {
+            isStart = false;
+            return true;
+         } else return false;
+      }
+   })(),
    'dragleft': (ev, lev, tri) => {
       if (eventConditions['dragmove'](ev, lev, tri)) {
-         const isLeft = ev.pointers[ev.originEvent.pointerId].displacement[0] < 0;
+         const isLeft = ev.triggerPointer.displacement[0] < 0;
          return isLeft;
       } else return false;
    },
    'dragright': (ev, lev, tri) => {
       if (eventConditions['dragmove'](ev, lev, tri)) {
-         const isRight = ev.pointers[ev.originEvent.pointerId].displacement[0] > 0;
+         const isRight = ev.triggerPointer.displacement[0] > 0;
          return isRight;
       } else return false;
    },
    'dragup': (ev, lev, tri) => {
       if (eventConditions['dragmove'](ev, lev, tri)) {
-         const isUp = ev.pointers[ev.originEvent.pointerId].displacement[1] < 0;
+         const isUp = ev.triggerPointer.displacement[1] < 0;
          return isUp;
       } else return false;
    },
    'dragdown': (ev, lev, tri) => {
       if (eventConditions['dragmove'](ev, lev, tri)) {
-         const isDown = ev.pointers[ev.originEvent.pointerId].displacement[1] > 0;
+         const isDown = ev.triggerPointer.displacement[1] > 0;
          return isDown;
       } else return false;
    },
@@ -196,33 +203,33 @@ const eventConditions = {
    /* swipeEvent */
    'swipeleft': (ev, lev, tri) => {
       if (tri == 'up') {
-         const isLeftEnough = ev.releasePointer.displacement[0] < -10;
-         const isMove = ev.releasePointer.move;
-         const velocityEnough = ev.releasePointer.velocity[0] < -0.3;
+         const isLeftEnough = ev.triggerPointer.displacement[0] < -10;
+         const isMove = ev.triggerPointer.move;
+         const velocityEnough = ev.triggerPointer.velocity[0] < -0.3;
          return isLeftEnough && isMove && velocityEnough;
       } else return false;
    },
    'swiperight': (ev, lev, tri) => {
       if (tri == 'up') {
-         const isRightEnough = ev.releasePointer.displacement[0] > 10;
-         const isMove = ev.releasePointer.move;
-         const velocityEnough = ev.releasePointer.velocity[0] > 0.3;
+         const isRightEnough = ev.triggerPointer.displacement[0] > 10;
+         const isMove = ev.triggerPointer.move;
+         const velocityEnough = ev.triggerPointer.velocity[0] > 0.3;
          return isRightEnough && isMove && velocityEnough;
       } else return false;
    },
    'swipeup': (ev, lev, tri) => {
       if (tri == 'up') {
-         const isUpEnough = ev.releasePointer.displacement[1] < -10;
-         const isMove = ev.releasePointer.move;
-         const velocityEnough = ev.releasePointer.velocity[1] < -0.3;
+         const isUpEnough = ev.triggerPointer.displacement[1] < -10;
+         const isMove = ev.triggerPointer.move;
+         const velocityEnough = ev.triggerPointer.velocity[1] < -0.3;
          return isUpEnough && isMove && velocityEnough;
       } else return false;
    },
    'swipedown': (ev, lev, tri) => {
       if (tri == 'up') {
-         const isDownEnough = ev.releasePointer.displacement[1] > 10;
-         const isMove = ev.releasePointer.move;
-         const velocityEnough = ev.releasePointer.velocity[1] > 0.3;
+         const isDownEnough = ev.triggerPointer.displacement[1] > 10;
+         const isMove = ev.triggerPointer.move;
+         const velocityEnough = ev.triggerPointer.velocity[1] > 0.3;
          return isDownEnough && isMove && velocityEnough;
       } else return false;
    },
@@ -232,8 +239,8 @@ const eventConditions = {
       if (tri == 'move') {
          // 判断是否是双指操作，是否是第一次移动触发，是否移动了，两指间距是否改变了
          const isTwoPointer = ev.pointerCount == 2;
-         const isFirstMove = ev.pointers[ev.originEvent.pointerId].firstMove;
-         const isMove = ev.pointers[ev.originEvent.pointerId].move;
+         const isFirstMove = ev.triggerPointer.firstMove;
+         const isMove = ev.triggerPointer.move;
          const isZoom = Math.abs(ev.scale - 1) > 0.1;
          return isTwoPointer && isFirstMove && isMove && isZoom;
       } else return false;
@@ -242,8 +249,8 @@ const eventConditions = {
       if (tri == 'move') {
          // 判断是否是双指操作，是否不是第一次移动触发 ，是否移动了，两指间距是否改变了
          const isTwoPointer = ev.pointerCount == 2;
-         const isMove = ev.pointers[ev.originEvent.pointerId].move;
-         const isNotFirstMove = !ev.pointers[ev.originEvent.pointerId].firstMove;
+         const isMove = ev.triggerPointer.move;
+         const isNotFirstMove = !ev.triggerPointer.firstMove;
          const isZoom = Math.abs(ev.scale - 1) > 0.1;
          return isTwoPointer && isMove && isNotFirstMove && isZoom;
       } else return false;
@@ -260,7 +267,18 @@ const eventConditions = {
          } else return false;
       }
    })(),
-   'pinchcancel': (ev, lev, tri) => { },
+   'pinchcancel': (() => {
+      let isStart = false;
+      return (ev, lev, tri) => {
+         if (eventConditions['pinchstart'](ev, lev, tri)) {
+            isStart = true;
+         }
+         if ((isStart && tri == 'cancel') || (tri == 'down' && ev.pointerCount > 2)) {
+            isStart = false;
+            return true;
+         } else return false;
+      }
+   })(),
    'pinchin': (ev, lev, tri) => {
       if (eventConditions['pinchmove'](ev, lev, tri)) {
          const isPinchIn = ev.scale < 1;
@@ -279,8 +297,8 @@ const eventConditions = {
       if (tri == 'move') {
          // 判断是否是双指操作，是否是第一次移动触发，是否移动了，两指间角度是否改变了
          const isTwoPointer = ev.pointerCount == 2;
-         const isFirstMove = ev.pointers[ev.originEvent.pointerId].firstMove;
-         const isMove = ev.pointers[ev.originEvent.pointerId].move;
+         const isFirstMove = ev.triggerPointer.firstMove;
+         const isMove = ev.triggerPointer.move;
          const isRotate = Math.abs(ev.refAngle) > 5;
          return isTwoPointer && isFirstMove && isMove && isRotate;
       } else return false;
@@ -289,8 +307,8 @@ const eventConditions = {
       if (tri == 'move') {
          // 判断是否是双指操作，是否不是第一次移动触发 ，是否移动了，两指间角度是否改变了
          const isTwoPointer = ev.pointerCount == 2;
-         const isMove = ev.pointers[ev.originEvent.pointerId].move;
-         const isNotFirstMove = !ev.pointers[ev.originEvent.pointerId].firstMove;
+         const isMove = ev.triggerPointer.move;
+         const isNotFirstMove = !ev.triggerPointer.firstMove;
          const isRotate = Math.abs(ev.refAngle) > 5;
          return isTwoPointer && isMove && isNotFirstMove && isRotate;
       } else return false;
@@ -352,23 +370,24 @@ class GestureEvent {
 
    /**
     * @name 构造函数
-    * @param {Boolean} _debug 是否开启调试模式
     * @constructor
     * @returns {GestureEvent} - 返回一个RbGestureEvent实例
     * @description 构造函数
     */
-   constructor(_debug = false) {
-      debug = _debug;
+   constructor() {
       // 监听触摸相关事件
-      [
-         ['pointerdown', this.pointerdown],
-         ['pointermove', this.pointermove],
-         ['pointerup', this.pointerup],
-      ].forEach(n => window.addEventListener(n[0], n[1], true));
+      document.addEventListener('DOMContentLoaded', () => {
+         [
+            ['pointerdown', this.pointerdown],
+            ['pointermove', this.pointermove],
+            ['pointerup', this.pointerup],
+            ['pointercancel', this.pointerCancel],
+         ].forEach(n => window.addEventListener(n[0], n[1], true));
+      });
+   }
 
-      if (debug) {
-         console.log('loading RbGestureListener');
-      }
+   setDebug(_debug) {
+      debug = _debug;
    }
 
    /** 
@@ -426,6 +445,8 @@ class GestureEvent {
          // 设置空计时器，防止之后无脑clear的时候出问题
          velocityTimeOut: setTimeout(() => { }, 100)
       };
+
+      eventState.triggerPointer = eventState.pointers[id];
 
       // 处理一个触摸点的情况
       if (eventState.pointerCount == 0) {
@@ -490,6 +511,8 @@ class GestureEvent {
             (pointer.location[1] - lastEventState.pointers[id].location[1]) / deltaTime,
          ];
 
+         eventState.triggerPointer = eventState.pointers[id];
+
          if (eventState.pointerCount == 2) {
             const twoPointerLocationg = [
                [eventState.pointers.values[0].clientX, eventState.pointers.values[0].clientY],
@@ -519,7 +542,7 @@ class GestureEvent {
       eventState.originEvent = event;
 
       const id = event.pointerId;
-      eventState.releasePointer = eventState.pointers[id];
+      eventState.triggerPointer = eventState.pointers[id];
       eventState.pointers[id] = null;
 
       eventState.time = Date.now();
@@ -529,17 +552,18 @@ class GestureEvent {
       this.copyState();
    }
 
+   /**
+    * @name 处理触摸取消事件
+    * @param {PointerEvent} event
+    */
    pointerCancel = (event) => {
       this.updateLastState();
 
       const eventState = GestureEvent.eventState;
       eventState.originEvent = event;
 
-      // const id = event.pointerId;
-      // eventState.upponiterId = id;
-      // delete eventState.pointers[id];
       const id = event.pointerId;
-      eventState.releasePointer = eventState.pointers[id];
+      eventState.triggerPointer = eventState.pointers[id];
       eventState.pointers[id] = null;
 
       eventState.time = Date.now();
@@ -564,10 +588,11 @@ class GestureEvent {
       // 如果元素没有事件列表，添加事件监听器，否则直接添加事件
       if (!element[EVENTLIST]) {
          element[EVENTLIST] = {};
-         element.addEventListener('pointerdown', GestureEvent.downdispatch, true);
-         element.addEventListener('pointermove', GestureEvent.movedispatch, true);
-         element.addEventListener('pointerup', GestureEvent.updispatch, true);
-         element.addEventListener('pointerout', GestureEvent.outdispatch, true);
+         element.addEventListener('pointerdown', GestureEvent.downDispatch);
+         element.addEventListener('pointermove', GestureEvent.moveDispatch);
+         element.addEventListener('pointerup', GestureEvent.upDispatch);
+         element.addEventListener('pointerout', GestureEvent.outDispatch);
+         element.addEventListener('pointercancel', GestureEvent.cancelDispatch);
       }
       if (!element[EVENTLIST][type]) {
          element[EVENTLIST][type] = [];
@@ -626,10 +651,10 @@ class GestureEvent {
 
             if (Object.keys(element[EVENTLIST]).length == 0) {
                delete element[EVENTLIST];
-               element.removeEventListener('pointerdown', GestureEvent.downdispatch, true);
-               element.removeEventListener('pointermove', GestureEvent.movedispatch, true);
-               element.removeEventListener('pointerup', GestureEvent.updispatch, true);
-               element.removeEventListener('pointerout', GestureEvent.outdispatch, true);
+               element.removeEventListener('pointerdown', GestureEvent.downDispatch);
+               element.removeEventListener('pointermove', GestureEvent.moveDispatch);
+               element.removeEventListener('pointerup', GestureEvent.upDispatch);
+               element.removeEventListener('pointerout', GestureEvent.outDispatch);
             }
          }
 
@@ -669,37 +694,36 @@ class GestureEvent {
     * @description 按下事件调度器
     * @param {PointerEvent} event - 事件 
     */
-   static downdispatch() {
-      // if (debug) console.log('down');
-
+   static downDispatch() {
       GestureEvent.dispatchEvent(this, 'down');
       if (GestureEvent.eventState.pointerCount == 1)
          this[LONGTOUCH] = setInterval(() => {
-            GestureEvent.longtouchdispatch(this);
+            GestureEvent.longtouchDispatch(this);
          }, 100);
       else if (this[LONGTOUCH])
          clearInterval(this[LONGTOUCH]);
    }
 
-   static longtouchdispatch(element) {
-      // if (debug) console.log('longtouch');
+   static longtouchDispatch(element) {
       GestureEvent.dispatchEvent(element, 'longtouch');
    }
 
-   static movedispatch() {
-      // if (debug) console.log('move');
+   static moveDispatch() {
       if (GestureEvent.eventState.pointerCount >= 1)
          GestureEvent.dispatchEvent(this, 'move');
    }
 
-   static updispatch() {
-      // if (debug) console.log('up');
+   static upDispatch() {
       GestureEvent.dispatchEvent(this, 'up');
       clearInterval(this[LONGTOUCH]);
    }
 
-   static outdispatch() {
-      // if (debug) console.log('out');
+   static outDispatch() {
+      clearInterval(this[LONGTOUCH]);
+   }
+
+   static cancelDispatch() {
+      GestureEvent.dispatchEvent(this, 'cancel');
       clearInterval(this[LONGTOUCH]);
    }
 
@@ -749,4 +773,6 @@ class GestureEvent {
    static midPoint = ([x1, y1], [x2, y2]) => [(x1 - x2) / 2, (y1 - y2) / 2];
 }
 
-export { GestureEvent as RbGestureEvent, EventState as RbEventState };
+const _g = new GestureEvent();
+
+export { _g as RbGestureEvent, EventState as RbEventState };

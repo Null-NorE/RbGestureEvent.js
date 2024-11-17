@@ -17,7 +17,8 @@ const main = event => {
    const button = document.querySelector('#main-touch');
    const touchBox = document;
 
-   const gesture = new RbGestureEvent(true);
+   const gesture = RbGestureEvent;
+   gesture.setDebug(true);
    const clickf = event => {
       console.log('click');
    }
