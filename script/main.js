@@ -1,5 +1,5 @@
 "use strict";
-import { RbGestureEvent, RbEventState } from './RbGestureEvent.mjs';
+import { RbGestureEvent, RbEventState} from './RbGestureEvent.mjs';
 
 /**
  * @name main
@@ -78,6 +78,7 @@ const main = event => {
       const pointer = event.pointers[event.originEvent.pointerId];
       button.style.left = pointer.displacement[0] + 'px';
       button.style.top = pointer.displacement[1] + 'px';
+      // console.log(event.pointerCount, event.pointers, event.originEvent.pointerId);
    });
 }
 

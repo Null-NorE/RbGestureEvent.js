@@ -1,4 +1,6 @@
 "use strict";
+// 版本号，用于调试
+const version = 'beta 0.2.2';
 
 /** 
  * @name debug 
@@ -8,9 +10,9 @@
  */
 let debug = false;
 
-const EVENTLIST = Symbol.for('eventList');
-const LONGTOUCH = Symbol.for('longtouch');
-const CBMAPPING = Symbol.for('callbackMapping');
+const EVENTLIST = Symbol.for('RBEventList');
+const LONGTOUCH = Symbol.for('RBLongtouch');
+const CBMAPPING = Symbol.for('RBCallbackMapping');
 
 /**
  * @name PointerInfo
@@ -161,6 +163,7 @@ const eventConditions = {
       } else return false;
    },
    'dragmove': (ev, lev, tri) => {
+      console.log(ev.pointerCount, ev.pointers, ev.originEvent.pointerId);
       if (tri == 'move') {
          // 判断是否是单指操作，是否不是第一次移动触发，是否移动了
          const isSinglePointer = ev.pointerCount == 1;
@@ -395,7 +398,7 @@ class GestureEvent {
     * @constant
     * @member {Number} threshold 识别需要的最小位移
     */
-   config = {
+   static config = {
       threshold: 10,
    }
 
@@ -409,10 +412,10 @@ class GestureEvent {
       // 监听触摸相关事件
       document.addEventListener('DOMContentLoaded', () => {
          [
-            ['pointerdown', this.pointerdown],
-            ['pointermove', this.pointermove],
-            ['pointerup', this.pointerup],
-            ['pointercancel', this.pointerCancel],
+            ['pointerdown', GestureEvent.pointerdown],
+            ['pointermove', GestureEvent.pointermove],
+            ['pointerup', GestureEvent.pointerup],
+            ['pointercancel', GestureEvent.pointerCancel],
          ].forEach(n => window.addEventListener(n[0], n[1], true));
       });
    }
@@ -421,35 +424,49 @@ class GestureEvent {
     * @description 设置调试模式
     * @param {Boolean} _debug - 是否开启调试模式
     */
-   setDebug(_debug) {
+   static setDebug(_debug) {
       debug = _debug;
+      if (debug) console.log(
+         `%cRbGestureEvent - debug mode on, version: ${version}`,
+         `
+         color: white;
+         background-color: #333333; 
+         font-weight: bold;
+         text-shadow: 0 0 5px white;
+         padding: 0.5em;
+         border-left: 5px solid #ff0000;
+         border-right: 5px solid #ff0000;
+         `
+      );
    }
 
-   /** 
-    * @description 更新LastEventState
+   /**
+    * @description 处理originEvent并克隆状态
+    * @param {Object} targetState - 目标状态对象
     */
-   updateLastState() {
+   static cloneStateTo(targetState) {
       const event = GestureEvent.eventState.originEvent;
       GestureEvent.eventState.originEvent = null;
 
-      GestureEvent.lastEventState = structuredClone(GestureEvent.eventState);
-      GestureEvent.lastEventState.time = Date.now();
-      GestureEvent.lastEventState.originEvent = event;
+      GestureEvent[targetState] = structuredClone(GestureEvent.eventState);
+      GestureEvent[targetState].originEvent = event;
 
       GestureEvent.eventState.originEvent = event;
    }
 
    /**
+    * @description 拷贝eventState的数据到lastEventState
+    */
+   static copyStateToLast() {
+      this.cloneStateTo('lastEventState');
+      GestureEvent.lastEventState.time = Date.now();
+   }
+
+   /**
     * @description 将eventState的数据拷贝到outEventState
     */
-   copyState() {
-      const event = GestureEvent.eventState.originEvent;
-      GestureEvent.eventState.originEvent = null;
-
-      GestureEvent.outEventState = structuredClone(GestureEvent.eventState);
-      GestureEvent.outEventState.originEvent = event;
-
-      GestureEvent.eventState.originEvent = event;
+   static copyState() {
+      this.cloneStateTo('outEventState');
    }
 
    /**
@@ -459,9 +476,9 @@ class GestureEvent {
     * @param {String} eventType - 事件类型 (down/move/up/cancel)
     * @private
     */
-   updateEventState(event, eventState, eventType) {
+   static updateEventState(event, eventState, eventType) {
       const id = event.pointerId;
-      
+
       eventState.originEvent = event;
       eventState.time = Date.now();
       eventState.eventType = eventType;
@@ -473,12 +490,12 @@ class GestureEvent {
     * @param {EventState} eventState - 当前事件状态
     * @private 
     */
-   updateTwoPointerState(eventState) {
+   static updateTwoPointerState(eventState) {
       const pointers = [...eventState.pointers.values()];
       const twoPointerLocation = pointers.map(p => [p.clientX, p.clientY]);
 
       eventState.startLength = GestureEvent.eDistance(twoPointerLocation);
-      eventState.startAngle = GestureEvent.refAngle(twoPointerLocation); 
+      eventState.startAngle = GestureEvent.refAngle(twoPointerLocation);
       eventState.midPoint = GestureEvent.midPoint(twoPointerLocation);
    }
 
@@ -489,7 +506,7 @@ class GestureEvent {
     * @param {Number} id - 指针ID
     * @private
     */
-   updateVelocity(pointer, lastState, id) {
+   static updateVelocity(pointer, lastState, id) {
       clearTimeout(pointer.velocityTimeOut);
 
       pointer.velocityTimeOut = setTimeout(() => {
@@ -507,11 +524,11 @@ class GestureEvent {
     * 指针按下事件处理器
     * @param {PointerEvent} event 
     */
-   pointerdown = (event) => {
-      this.updateLastState();
+   static pointerdown = (event) => {
+      GestureEvent.copyStateToLast();
       const eventState = GestureEvent.eventState;
-      
-      this.updateEventState(event, eventState, 'down');
+
+      GestureEvent.updateEventState(event, eventState, 'down');
 
       // 初始化新的指针数据
       const id = event.pointerId;
@@ -530,27 +547,27 @@ class GestureEvent {
       if (eventState.pointerCount === 0) {
          eventState.startTime = Date.now();
       }
-      
+
       if (eventState.pointerCount === 1) {
-         this.updateTwoPointerState(eventState);
+         GestureEvent.updateTwoPointerState(eventState);
       }
 
       eventState.pointerCount++;
-      this.copyState();
+      GestureEvent.copyState();
    }
 
    /**
     * 指针移动事件处理器  
     * @param {PointerEvent} event
     */
-   pointermove = (event) => {
-      this.updateLastState();
+   static pointermove = (event) => {
+      GestureEvent.copyStateToLast();
       const eventState = GestureEvent.eventState;
       const lastState = GestureEvent.lastEventState;
 
       if (eventState.pointerCount < 1) return;
 
-      this.updateEventState(event, eventState, 'move');
+      GestureEvent.updateEventState(event, eventState, 'move');
 
       const id = event.pointerId;
       const pointer = eventState.pointers[id];
@@ -560,49 +577,49 @@ class GestureEvent {
       pointer.move = true;
       pointer.location = [event.clientX, event.clientY];
       pointer.displacement = [
-         event.clientX - pointer.startLocation[0], 
+         event.clientX - pointer.startLocation[0],
          event.clientY - pointer.startLocation[1]
       ];
 
-      this.updateVelocity(pointer, lastState, id);
+      GestureEvent.updateVelocity(pointer, lastState, id);
 
       if (eventState.pointerCount === 2) {
-         this.updateTwoPointerState(eventState);
+         GestureEvent.updateTwoPointerState(eventState);
       }
 
-      this.copyState();
+      GestureEvent.copyState();
    }
 
    /**
     * 指针抬起事件处理器
     * @param {PointerEvent} event
     */
-   pointerup = (event) => {
-      this.updateLastState();
+   static pointerup = (event) => {
+      GestureEvent.copyStateToLast();
       const eventState = GestureEvent.eventState;
 
-      this.updateEventState(event, eventState, 'up');
-      
+      GestureEvent.updateEventState(event, eventState, 'up');
+
       eventState.pointers[event.pointerId] = null;
       eventState.pointerCount--;
 
-      this.copyState(); 
+      GestureEvent.copyState();
    }
 
    /**
     * 指针取消事件处理器
     * @param {PointerEvent} event 
     */
-   pointerCancel = (event) => {
-      this.updateLastState();
+   static pointerCancel = (event) => {
+      GestureEvent.copyStateToLast();
       const eventState = GestureEvent.eventState;
 
-      this.updateEventState(event, eventState, 'cancel');
+      GestureEvent.updateEventState(event, eventState, 'cancel');
 
       eventState.pointers[event.pointerId] = null;
       eventState.pointerCount--;
 
-      this.copyState();
+      GestureEvent.copyState();
    }
 
    /**
@@ -612,7 +629,7 @@ class GestureEvent {
     * @param {(eventState: EventState) => void} callback 回调函数
     * @returns {void} - 无返回值
     */
-   registerEventListener(element, type, callback) {
+   static registerEventListener(element, type, callback) {
       if (eventConditions[type] == undefined) {
          throw new Error(`event type ${type} not found`);
       }
@@ -664,7 +681,7 @@ class GestureEvent {
     * @param {Function} callback 回调函数
     * @returns {void} - 无返回值
     */
-   cancelEventListener(element, type, callback) {
+   static cancelEventListener(element, type, callback) {
       if (debug) console.log(`cancel event: ${type} on`, element);
 
       if (element[CBMAPPING].has(callback)) {
@@ -702,7 +719,7 @@ class GestureEvent {
     * @param {String} type - 事件类型
     * @param {(ev: EventState, lev: EventState, tri: String) => Boolean} condition - 条件函数
     */
-   setCondition(type, condition) {
+   static setCondition(type, condition) {
       if (eventConditions[type]) {
          if (debug) console.warn(`event type ${type} already exists, will be overwritten`);
       }
@@ -713,7 +730,7 @@ class GestureEvent {
     * @description 移除事件触发条件
     * @param {String} type - 事件类型
     */
-   removeCondition(type) {
+   static removeCondition(type) {
       if (eventConditions[type]) {
          delete eventConditions[type];
       } else {
@@ -804,7 +821,6 @@ class GestureEvent {
    static midPoint = ([x1, y1], [x2, y2]) => [(x1 - x2) / 2, (y1 - y2) / 2];
 }
 
-// 使用单例模式
-const gestureInstance = new GestureEvent();
+const _ = new GestureEvent;// 触发构造函数
 
-export { gestureInstance as RbGestureEvent, EventState as RbEventState };
+export { GestureEvent as RbGestureEvent, EventState as RbEventState, PointerInfo as RbPointerInfo };
