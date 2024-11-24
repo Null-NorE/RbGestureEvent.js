@@ -491,8 +491,10 @@ class GestureEvent {
     * @private 
     */
    static updateTwoPointerState(eventState) {
-      const pointers = [...eventState.pointers.values()];
-      const twoPointerLocation = pointers.map(p => [p.clientX, p.clientY]);
+      const twoPointerLocation = [...eventState.pointers.values()]
+         .filter(p => p !== null)
+         .slice(0, 2)
+         .map(({ clientX, clientY }) => [clientX, clientY]);
 
       eventState.startLength = GestureEvent.eDistance(twoPointerLocation);
       eventState.startAngle = GestureEvent.refAngle(twoPointerLocation);
