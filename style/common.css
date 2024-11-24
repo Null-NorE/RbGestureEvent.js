@@ -59,6 +59,8 @@ body {
   font-size: 2rem;
   font-weight: 200;
   color: #cacaca;
+  pointer-events: none;
+  user-select: none;
 }
 
 #github-link {
@@ -68,13 +70,14 @@ body {
   text-decoration: none;
   padding-top: 0.7rem;
   padding-bottom: 0.7rem;
-  
+
   width: 40%;
   font-size: 1rem;
   color: #cacaca;
   border: #cacaca50 solid 0.07rem;
 
   transition-duration: 0.3s;
+  user-select:none;
 }
 
 #github-link:hover {
@@ -90,6 +93,8 @@ body {
   color: #cacaca;
   transition-duration: 0.5s;
   opacity: 0;
+  pointer-events: none;
+  user-select: none;
 }
 
 #main-touch:hover #tip {

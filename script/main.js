@@ -55,13 +55,9 @@ const main = event => {
       });
    });
    [
-      'pointerdown',
-      'pointerup',
       'pointermove',
-      'pointerleave',
-      'touchstart',
-      'touchend',
       'touchmove',
+      'onscroll',
    ].forEach(type => {
       button.addEventListener(type, event => {
          event.preventDefault();
@@ -75,7 +71,7 @@ const main = event => {
       button.style.top = 0;
    });
    gesture.registerEventListener(touchBox, 'dragmove', event => {
-      const pointer = event.pointers[event.originEvent.pointerId];
+      const pointer = event.triggerPointer;
       button.style.left = pointer.displacement[0] + 'px';
       button.style.top = pointer.displacement[1] + 'px';
       // console.log(event.pointerCount, event.pointers, event.originEvent.pointerId);

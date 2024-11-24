@@ -1,6 +1,6 @@
 "use strict";
 // 版本号，用于调试
-const version = 'beta 0.2.2';
+const version = 'beta 0.2.2.c';
 
 /** 
  * @name debug 
@@ -69,7 +69,7 @@ class EventState {
    startAngle = 0;
    startTime = Date.now();
 
-   pointers = [];
+   pointers = new Map(); // 改为使用Map存储指针
    triggerPointer = new PointerInfo;
    pointerCount = 0;
 
@@ -163,7 +163,7 @@ const eventConditions = {
       } else return false;
    },
    'dragmove': (ev, lev, tri) => {
-      console.log(ev.pointerCount, ev.pointers, ev.originEvent.pointerId);
+      console.log(ev.pointerCount, JSON.stringify([...ev.pointers.values()]), ev.originEvent.pointerId);
       if (tri == 'move') {
          // 判断是否是单指操作，是否不是第一次移动触发，是否移动了
          const isSinglePointer = ev.pointerCount == 1;
@@ -482,7 +482,7 @@ class GestureEvent {
       eventState.originEvent = event;
       eventState.time = Date.now();
       eventState.eventType = eventType;
-      eventState.triggerPointer = eventState.pointers[id];
+      eventState.triggerPointer = eventState.pointers.get(id);
    }
 
    /**
@@ -492,13 +492,12 @@ class GestureEvent {
     */
    static updateTwoPointerState(eventState) {
       const twoPointerLocation = [...eventState.pointers.values()]
-         .filter(p => p !== null)
          .slice(0, 2)
-         .map(({ clientX, clientY }) => [clientX, clientY]);
+         .map(p => [p.location[0], p.location[1]]);
 
-      eventState.startLength = GestureEvent.eDistance(twoPointerLocation);
-      eventState.startAngle = GestureEvent.refAngle(twoPointerLocation);
-      eventState.midPoint = GestureEvent.midPoint(twoPointerLocation);
+      eventState.startLength = GestureEvent.eDistance(...twoPointerLocation);
+      eventState.startAngle = GestureEvent.refAngle(...twoPointerLocation);
+      eventState.midPoint = GestureEvent.midPoint(...twoPointerLocation);
    }
 
    /**
@@ -517,8 +516,8 @@ class GestureEvent {
 
       const deltaTime = Date.now() - lastState.time;
       pointer.velocity = [
-         (pointer.location[0] - lastState.pointers[id].location[0]) / deltaTime,
-         (pointer.location[1] - lastState.pointers[id].location[1]) / deltaTime
+         (pointer.location[0] - lastState.pointers.get(id).location[0]) / deltaTime,
+         (pointer.location[1] - lastState.pointers.get(id).location[1]) / deltaTime
       ];
    }
 
@@ -534,7 +533,7 @@ class GestureEvent {
 
       // 初始化新的指针数据
       const id = event.pointerId;
-      eventState.pointers[id] = {
+      eventState.pointers.set(id, {
          move: false,
          firstMove: false,
          velocity: [0, 0],
@@ -542,9 +541,9 @@ class GestureEvent {
          location: [event.clientX, event.clientY],
          startLocation: [event.clientX, event.clientY],
          velocityTimeOut: setTimeout(() => { }, 100)
-      };
+      });
 
-      eventState.triggerPointer = eventState.pointers[id];
+      eventState.triggerPointer = eventState.pointers.get(id);
 
       if (eventState.pointerCount === 0) {
          eventState.startTime = Date.now();
@@ -572,7 +571,8 @@ class GestureEvent {
       GestureEvent.updateEventState(event, eventState, 'move');
 
       const id = event.pointerId;
-      const pointer = eventState.pointers[id];
+      const pointer = eventState.pointers.get(id);
+      if (!pointer) return; // 增加安全检查
 
       // 更新指针状态
       pointer.firstMove = !pointer.move;
@@ -585,7 +585,7 @@ class GestureEvent {
 
       GestureEvent.updateVelocity(pointer, lastState, id);
 
-      if (eventState.pointerCount === 2) {
+      if (eventState.pointerCount == 2) {
          GestureEvent.updateTwoPointerState(eventState);
       }
 
@@ -602,7 +602,7 @@ class GestureEvent {
 
       GestureEvent.updateEventState(event, eventState, 'up');
 
-      eventState.pointers[event.pointerId] = null;
+      eventState.pointers.delete(event.pointerId);
       eventState.pointerCount--;
 
       GestureEvent.copyState();
@@ -618,7 +618,7 @@ class GestureEvent {
 
       GestureEvent.updateEventState(event, eventState, 'cancel');
 
-      eventState.pointers[event.pointerId] = null;
+      eventState.pointers.delete(event.pointerId);
       eventState.pointerCount--;
 
       GestureEvent.copyState();
