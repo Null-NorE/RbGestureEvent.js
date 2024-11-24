@@ -66,16 +66,29 @@ const main = event => {
 
    swipeRotate(button);
 
-   gesture.registerEventListener(touchBox, 'dragend', event => {
+   gesture.registerEventListener(button, 'dragend', event => {
       button.style.left = 0;
       button.style.top = 0;
    });
-   gesture.registerEventListener(touchBox, 'dragmove', event => {
+   gesture.registerEventListener(button, 'dragmove', event => {
       const pointer = event.triggerPointer;
       button.style.left = pointer.displacement[0] + 'px';
       button.style.top = pointer.displacement[1] + 'px';
-      // console.log(event.pointerCount, event.pointers, event.originEvent.pointerId);
    });
+
+   gesture.registerEventListener(button, 'rotatestart', event => {
+      button.style.transform = `rotate(${0}deg)`;
+      console.log('rotatestart');
+   });
+   gesture.registerEventListener(button, 'rotatemove', event => {
+      button.style.transform = `rotate(${event.refAngle}deg)`;
+      console.log('rotatemove', event.refAngle);
+   });
+   gesture.registerEventListener(button, 'rotateend', event => {
+      button.style.transform = `rotate(${0}deg)`;
+      console.log('rotateend');
+   });
+
 }
 
 /**

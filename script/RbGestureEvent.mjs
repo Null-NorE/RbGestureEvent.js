@@ -1,6 +1,6 @@
 "use strict";
 // 版本号，用于调试
-const version = 'beta 0.2.2.c';
+const version = 'beta 0.2.3.b';
 
 /** 
  * @name debug 
@@ -163,7 +163,6 @@ const eventConditions = {
       } else return false;
    },
    'dragmove': (ev, lev, tri) => {
-      console.log(ev.pointerCount, JSON.stringify([...ev.pointers.values()]), ev.originEvent.pointerId);
       if (tri == 'move') {
          // 判断是否是单指操作，是否不是第一次移动触发，是否移动了
          const isSinglePointer = ev.pointerCount == 1;
@@ -330,6 +329,7 @@ const eventConditions = {
    'rotatestart': (ev, lev, tri) => {
       if (tri == 'move') {
          // 判断是否是双指操作，是否是第一次移动触发，是否移动了，两指间角度是否改变了
+         console.log(ev.refAngle, ev.pointerCount, ev.triggerPointer.firstMove, ev.triggerPointer.move);
          const isTwoPointer = ev.pointerCount == 2;
          const isFirstMove = ev.triggerPointer.firstMove;
          const isMove = ev.triggerPointer.move;
@@ -706,6 +706,7 @@ class GestureEvent {
                element.removeEventListener('pointermove', GestureEvent.moveDispatch);
                element.removeEventListener('pointerup', GestureEvent.upDispatch);
                element.removeEventListener('pointerout', GestureEvent.outDispatch);
+               element.removeEventListener('pointercancel', GestureEvent.cancelDispatch);
             }
          }
 
