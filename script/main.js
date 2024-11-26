@@ -92,7 +92,7 @@ const main = event => {
 }
 
 /**
- * 
+ * @description 处理swipe事件
  * @param {HTMLDivElement} element 
  */
 const swipeRotate = element => {

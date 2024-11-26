@@ -50,7 +50,7 @@ class PointerInfo {
  * @member {Number} startLenth 初始长度
  * @member {Number} startAngle 初始角度
  * @member {Date} startTime 初始时间
- * @member {Array<PointerInfo>} pointers 指针
+ * @member {Map<Number, PointerInfo>} pointers 指针
  * @member {PointerInfo} triggerPointer 触发指针
  * @member {Number} pointerCount 指针数量
  * @member {PointerEvent} originEvent 原始事件
@@ -58,21 +58,16 @@ class PointerInfo {
 class EventState {
    time = Date.now();
    eventType = '';
-
    scale = 1;
    refAngle = 0;
    midPoint = [0, 0];
-
    clickTimes = 0;
-
    startLength = 0;
    startAngle = 0;
    startTime = Date.now();
-
    pointers = new Map(); // 改为使用Map存储指针
    triggerPointer = new PointerInfo;
    pointerCount = 0;
-
    originEvent = new PointerEvent('none');
 }
 
@@ -486,17 +481,35 @@ class GestureEvent {
    }
 
    /**
-    * 处理双指手势计算
+    * 初始化双指手势计算
     * @param {EventState} eventState - 当前事件状态
     * @private 
     */
-   static updateTwoPointerState(eventState) {
+   static initializeTwoPointerState(eventState) {
       const twoPointerLocation = [...eventState.pointers.values()]
          .slice(0, 2)
          .map(p => [p.location[0], p.location[1]]);
 
       eventState.startLength = GestureEvent.eDistance(...twoPointerLocation);
       eventState.startAngle = GestureEvent.refAngle(...twoPointerLocation);
+      eventState.midPoint = GestureEvent.midPoint(...twoPointerLocation);
+   }
+
+   /**
+    * 更新双指手势计算
+    * @param {EventState} eventState - 当前事件状态
+    * @private
+    */
+   static updateTwoPointerState(eventState) {
+      const twoPointerLocation = [...eventState.pointers.values()]
+         .slice(0, 2)
+         .map(p => [p.location[0], p.location[1]]);
+      
+      const nowLength = GestureEvent.eDistance(...twoPointerLocation);
+      const nowAngle = GestureEvent.refAngle(...twoPointerLocation);
+
+      eventState.scale = nowLength / eventState.startLength;
+      eventState.refAngle = nowAngle - eventState.startAngle;
       eventState.midPoint = GestureEvent.midPoint(...twoPointerLocation);
    }
 
@@ -544,16 +557,16 @@ class GestureEvent {
       });
 
       eventState.triggerPointer = eventState.pointers.get(id);
+      eventState.pointerCount++;
 
-      if (eventState.pointerCount === 0) {
+      if (eventState.pointerCount == 1) {
          eventState.startTime = Date.now();
       }
 
-      if (eventState.pointerCount === 1) {
-         GestureEvent.updateTwoPointerState(eventState);
+      if (eventState.pointerCount == 2) {
+         GestureEvent.initializeTwoPointerState(eventState);
       }
 
-      eventState.pointerCount++;
       GestureEvent.copyState();
    }
 
@@ -568,7 +581,7 @@ class GestureEvent {
 
       if (eventState.pointerCount < 1) return;
 
-      GestureEvent.updateEventState(event, eventState, 'move');
+      GestureEvent.updateEventState(event, eventState, 'move'); // 因为triggerPointer是引用类型，所以即使还没更新指针数据，triggerPointer也会随着eventState.pointers更新
 
       const id = event.pointerId;
       const pointer = eventState.pointers.get(id);
