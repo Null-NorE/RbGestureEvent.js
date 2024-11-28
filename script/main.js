@@ -34,21 +34,24 @@ const main = event => {
       // 'doubleclick',
       // 'longtouch',
       // 'dragstart',
-      // 'dragend',
+      'dragend',
       // 'dragmove',
       // 'dragleft',
       // 'dragright',
       // 'dragup',
       // 'dragdown',
+      'doubledragstart',
+      'doubledragend',
+      'doubledragmove',
       // 'swipeleft',
       // 'swiperight',
       // 'swipeup',
       // 'swipedown',
-      // 'pinchstart',
-      'pinchin',
-      'pinchout',
+      'pinchstart',
+      // 'pinchin',
+      // 'pinchout',
       // 'pinchend',
-      // 'rotatestart',
+      'rotatestart',
       'rotatemove',
       'rotateend',
    ].forEach((type, i, a) => {
@@ -88,7 +91,6 @@ const main = event => {
       const twoPointerLocation = [...event.pointers.values()]
          .slice(0, 2)
          .map(p => [p.location[0], p.location[1]]);
-      console.log(JSON.stringify(twoPointerLocation));
    });
    gesture.registerEventListener(button, 'rotateend', event => {
       button.style.transform = button.style.transform.replace(/rotate\([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?deg\)/, '');

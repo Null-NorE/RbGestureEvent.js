@@ -1,6 +1,6 @@
 "use strict";
 // 版本号，用于调试
-const version = 'beta 0.2.3.c';
+const version = 'beta 0.2.4.c';
 
 /** 
  * @name debug 
@@ -146,12 +146,12 @@ const eventConditions = {
       } else return false;
    },
    'dragend': (ev, lev, tri) => {
-      if (tri == 'up') {
+      if (tri == 'up' || tri == 'move') {
          // 指针抬起前的最大指针数为1，且是移动操作
          const isSinglePointer = lev.maxPoint == 1;
          const isMove = ev.triggerPointer.move;
          return isSinglePointer && isMove;
-      } else return false;
+      }
    },
    'dragcancel': (ev, lev, tri) => {
       if (tri == 'cancel') {
@@ -183,6 +183,42 @@ const eventConditions = {
       if (eventConditions['dragmove'](ev, lev, tri)) {
          const isDown = ev.triggerPointer.displacement[1] > 0;
          return isDown;
+      } else return false;
+   },
+
+   /* doubelDragEvent */
+   'doubledragstart': (ev, lev, tri) => {
+      if (tri == 'move') {
+         // 判断是否是双指操作，是否是第一次移动触发，是否移动了
+         const isTwoPointer = ev.maxPoint == 2;
+         const isFirstMove = ev.triggerPointer.firstMove;
+         const isMove = ev.triggerPointer.move;
+         return isTwoPointer && isFirstMove && isMove;
+      } else return false;
+   },
+   'doubledragmove': (ev, lev, tri) => {
+      if (tri == 'move') {
+         // 判断是否是双指操作，是否不是第一次移动触发，是否移动了
+         const isTwoPointer = ev.maxPoint == 2;
+         const isNotFirstMove = !ev.triggerPointer.firstMove;
+         const isMove = ev.triggerPointer.move;
+         return isTwoPointer && isMove && isNotFirstMove;
+      } else return false;
+   },
+   'doubledragend': (ev, lev, tri) => {
+      if (tri == 'up') {
+         // 指针抬起前的最大指针数为2，且是移动操作
+         const isTwoPointer = lev.maxPoint == 2;
+         const isMove = ev.triggerPointer.move;
+         return isTwoPointer && isMove;
+      } else return false;
+   },
+   'doubledragcancel': (ev, lev, tri) => {
+      if (tri == 'cancel') {
+         // 指针抬起前的最大指针数为2，且是移动操作
+         const isTwoPointer = lev.maxPoint == 2;
+         const isMove = ev.triggerPointer.move;
+         return isTwoPointer && isMove;
       } else return false;
    },
 
