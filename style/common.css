@@ -77,7 +77,7 @@ body {
   border: #cacaca50 solid 0.07rem;
 
   transition-duration: 0.3s;
-  user-select:none;
+  user-select: none;
 }
 
 #github-link:hover {
@@ -126,6 +126,18 @@ body {
   line-height: 170%;
   font-weight: 300;
   color: #1c1c1c;
+}
+
+@media only screen and (max-width: 768px) {
+  .mobile-only {
+    display: inline;
+  }
+}
+
+@media only screen and (min-width: 769px) {
+  .mobile-only {
+    display: none;
+  }
 }
 
 
