@@ -10,6 +10,7 @@ import { RbGestureEvent, RbEventState } from './RbGestureEvent.mjs';
 */
 const main = event => {
    console.log('loading main.js');
+   let pageDebug = false;
 
    /**
     * @type {HTMLDivElement}
@@ -18,7 +19,10 @@ const main = event => {
    const touchBox = document;
 
    const gesture = RbGestureEvent;
+
    gesture.setDebug(true);
+   pageDebug = true;
+
    const clickf = event => {
       console.log('click');
    }
@@ -40,9 +44,9 @@ const main = event => {
       // 'dragright',
       // 'dragup',
       // 'dragdown',
-      'doubledragstart',
-      'doubledragend',
-      'doubledragmove',
+      // 'doubledragstart',
+      // 'doubledragend',
+      // 'doubledragmove',
       // 'swipeleft',
       // 'swiperight',
       // 'swipeup',
@@ -85,8 +89,8 @@ const main = event => {
    const [tp1, tp2] = [document.createElement('div'), document.createElement('div')];
    [tp1, tp2].forEach(tp => {
       tp.style.position = 'absolute';
-      tp.style.width = '2rem';
-      tp.style.height = '2rem';
+      tp.style.width = '1.6rem';
+      tp.style.height = '1.6rem';
       tp.style.borderRadius = '50%';
       tp.style.backgroundColor = '#ffffff50';
       tp.style.boxShadow = '0 0 0.5rem 0.5rem #00000017';
@@ -99,26 +103,41 @@ const main = event => {
    mtp.style.width = '1rem';
    mtp.style.height = '1rem';
    mtp.style.borderRadius = '50%';
-   mtp.style.backgroundColor = 'red';
+   mtp.style.border = '0.1rem solid #ffffff50';
    mtp.style.pointerEvents = 'none';
    document.body.appendChild(mtp);
 
+   gesture.registerEventListener(touchBox, 'doubledragstart', event => {
+      button.style.transformOrigin = 
+      `${event.midPoint[0] - button.offsetLeft}px ${event.midPoint[1] - button.offsetTop}px`
+      if (pageDebug) {
+         [tp1, mtp, tp2].forEach(tp => {
+            tp.style.display = 'block';
+         });
+      }
+   });
    gesture.registerEventListener(touchBox, 'doubledragend', event => {
-      button.style.left = 0;
-      button.style.top = 0;
+      if (pageDebug) {
+         [tp1, mtp, tp2].forEach(tp => {
+            tp.style.display = 'none';
+         });
+      }
    });
    gesture.registerEventListener(touchBox, 'doubledragmove', event => {
       button.style.left = event.midDisplacement[0] + 'px';
       button.style.top = event.midDisplacement[1] + 'px';
-      const twoPointerLocation = [...event.pointers.values()]
-         .slice(0, 2)
-         .map(p => [p.location[0], p.location[1]]);
-      tp1.style.left = twoPointerLocation[0][0] + 'px';
-      tp1.style.top = twoPointerLocation[0][1] + 'px';
-      tp2.style.left = twoPointerLocation[1][0] + 'px';
-      tp2.style.top = twoPointerLocation[1][1] + 'px';
-      mtp.style.left = event.midPoint[0] + 'px';
-      mtp.style.top = event.midPoint[1] + 'px';
+
+      if (pageDebug) {
+         const twoPointerLocation = [...event.pointers.values()]
+            .slice(0, 2)
+            .map(p => [p.location[0], p.location[1]]);
+         tp1.style.left = twoPointerLocation[0][0] + 'px';
+         tp1.style.top = twoPointerLocation[0][1] + 'px';
+         tp2.style.left = twoPointerLocation[1][0] + 'px';
+         tp2.style.top = twoPointerLocation[1][1] + 'px';
+         mtp.style.left = event.midPoint[0] + 'px';
+         mtp.style.top = event.midPoint[1] + 'px';
+      }
    });
 
    gesture.registerEventListener(touchBox, 'rotatestart', event => {
