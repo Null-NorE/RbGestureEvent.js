@@ -19,14 +19,14 @@ const main = event => {
 
    const gesture = RbGestureEvent;
    gesture.setDebug(true);
-   // const clickf = event => {
-   //    console.log('click');
-   // }
-   // gesture.registerEventListener(button, 'click', clickf);
-   // gesture.registerEventListener(button, 'click', clickf);
-   // gesture.registerEventListener(button, 'click', clickf);
-   // gesture.cancelEventListener(button, 'click', clickf);
-   // gesture.cancelEventListener(button, 'click', clickf);
+   const clickf = event => {
+      console.log('click');
+   }
+   gesture.registerEventListener(button, 'click', clickf);
+   gesture.registerEventListener(button, 'click', clickf);
+   gesture.registerEventListener(button, 'click', clickf);
+   gesture.cancelEventListener(button, 'click', clickf);
+   gesture.cancelEventListener(button, 'click', clickf);
    [
       // 'press',
       // 'release',
@@ -34,7 +34,7 @@ const main = event => {
       // 'doubleclick',
       // 'longtouch',
       // 'dragstart',
-      'dragend',
+      // 'dragend',
       // 'dragmove',
       // 'dragleft',
       // 'dragright',
@@ -47,13 +47,13 @@ const main = event => {
       // 'swiperight',
       // 'swipeup',
       // 'swipedown',
-      'pinchstart',
+      // 'pinchstart',
       // 'pinchin',
       // 'pinchout',
       // 'pinchend',
-      'rotatestart',
-      'rotatemove',
-      'rotateend',
+      // 'rotatestart',
+      // 'rotatemove',
+      // 'rotateend',
    ].forEach((type, i, a) => {
       gesture.registerEventListener(button, type, event => {
          // 为每条log添加一个不同的背景色
@@ -72,43 +72,79 @@ const main = event => {
 
    swipeRotate(button);
 
-   gesture.registerEventListener(button, 'dragend', event => {
+   gesture.registerEventListener(touchBox, 'dragend', event => {
       button.style.left = 0;
       button.style.top = 0;
    });
-   gesture.registerEventListener(button, 'dragmove', event => {
+   gesture.registerEventListener(touchBox, 'dragmove', event => {
       const pointer = event.triggerPointer;
       button.style.left = pointer.displacement[0] + 'px';
       button.style.top = pointer.displacement[1] + 'px';
    });
 
-   gesture.registerEventListener(button, 'rotatestart', event => {
-      button.style.transform += ' rotate(0deg)';
-      button.style.transitionDuration = '0s, 0s';
+   const [tp1, tp2] = [document.createElement('div'), document.createElement('div')];
+   [tp1, tp2].forEach(tp => {
+      tp.style.position = 'absolute';
+      tp.style.width = '2rem';
+      tp.style.height = '2rem';
+      tp.style.borderRadius = '50%';
+      tp.style.backgroundColor = '#ffffff50';
+      tp.style.boxShadow = '0 0 0.5rem 0.5rem #00000017';
+      tp.style.backdropFilter = 'blur(0.2rem)';
+      tp.style.pointerEvents = 'none';
+      document.body.appendChild(tp);
    });
-   gesture.registerEventListener(button, 'rotatemove', event => {
-      button.style.transform = button.style.transform.replace(/rotate\([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?deg\)/, `rotate(${event.deltaAngle}deg)`);
+   const mtp = document.createElement('div');
+   mtp.style.position = 'absolute';
+   mtp.style.width = '1rem';
+   mtp.style.height = '1rem';
+   mtp.style.borderRadius = '50%';
+   mtp.style.backgroundColor = 'red';
+   mtp.style.pointerEvents = 'none';
+   document.body.appendChild(mtp);
+
+   gesture.registerEventListener(touchBox, 'doubledragend', event => {
+      button.style.left = 0;
+      button.style.top = 0;
+   });
+   gesture.registerEventListener(touchBox, 'doubledragmove', event => {
+      button.style.left = event.midDisplacement[0] + 'px';
+      button.style.top = event.midDisplacement[1] + 'px';
       const twoPointerLocation = [...event.pointers.values()]
          .slice(0, 2)
          .map(p => [p.location[0], p.location[1]]);
+      tp1.style.left = twoPointerLocation[0][0] + 'px';
+      tp1.style.top = twoPointerLocation[0][1] + 'px';
+      tp2.style.left = twoPointerLocation[1][0] + 'px';
+      tp2.style.top = twoPointerLocation[1][1] + 'px';
+      mtp.style.left = event.midPoint[0] + 'px';
+      mtp.style.top = event.midPoint[1] + 'px';
    });
-   gesture.registerEventListener(button, 'rotateend', event => {
+
+   gesture.registerEventListener(touchBox, 'rotatestart', event => {
+      button.style.transform += ' rotate(0deg)';
+      button.style.transitionDuration = '0s, 0s';
+   });
+   gesture.registerEventListener(touchBox, 'rotatemove', event => {
+      button.style.transform = button.style.transform.replace(/rotate\([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?deg\)/, `rotate(${event.deltaAngle}deg)`);
+   });
+   gesture.registerEventListener(touchBox, 'rotateend', event => {
       button.style.transform = button.style.transform.replace(/rotate\([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?deg\)/, '');
       button.style.transitionDuration = '0s, 1s';
    });
 
 
-   gesture.registerEventListener(button, 'pinchstart', event => {
+   gesture.registerEventListener(touchBox, 'pinchstart', event => {
       button.style.transform += ' scale(1)';
       button.style.transitionDuration = '0s, 0s';
    });
-   gesture.registerEventListener(button, 'pinchin', event => {
+   gesture.registerEventListener(touchBox, 'pinchin', event => {
       button.style.transform = button.style.transform.replace(/scale\([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\)/, `scale(${event.scale})`);
    });
-   gesture.registerEventListener(button, 'pinchout', event => {
+   gesture.registerEventListener(touchBox, 'pinchout', event => {
       button.style.transform = button.style.transform.replace(/scale\([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\)/, `scale(${event.scale})`);
    });
-   gesture.registerEventListener(button, 'pinchend', event => {
+   gesture.registerEventListener(touchBox, 'pinchend', event => {
       button.style.transform = button.style.transform.replace(/scale\([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\)/, '');
       button.style.transitionDuration = '0s, 1s';
    });
