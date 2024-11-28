@@ -232,44 +232,44 @@ const eventConditions = {
    'swipeleft': (ev, lev, tri) => {
       if (tri == 'up') {
          const [disX, disY] = ev.triggerPointer.displacement;
-         const isSinglePointer = ev.pointerCount == 0;
-         const isLeftEnough = disX < -10;
+         const isSinglePointer = lev.maxPoint == 1;
+         const isLeftEnough = disX < -GestureEvent.config.threshold;
          const isLeftMost = disX < 0 && Math.abs(disX) > Math.abs(disY);
          const isMove = ev.triggerPointer.move;
-         const velocityEnough = ev.triggerPointer.velocity[0] < -0.3;
+         const velocityEnough = ev.triggerPointer.velocity[0] < -GestureEvent.config.swipeVelocityThreshold;
          return isSinglePointer && isMove && isLeftMost && isLeftEnough && velocityEnough;
       } else return false;
    },
    'swiperight': (ev, lev, tri) => {
       if (tri == 'up') {
          const [disX, disY] = ev.triggerPointer.displacement;
-         const isSinglePointer = ev.pointerCount == 0;
-         const isRightEnough = disX > 10;
+         const isSinglePointer = lev.maxPoint == 1;
+         const isRightEnough = disX > GestureEvent.config.threshold;
          const isRightMost = disX > 0 && Math.abs(disX) > Math.abs(disY);
          const isMove = ev.triggerPointer.move;
-         const velocityEnough = ev.triggerPointer.velocity[0] > 0.3;
+         const velocityEnough = ev.triggerPointer.velocity[0] > GestureEvent.config.swipeVelocityThreshold;
          return isSinglePointer && isMove && isRightMost && isRightEnough && velocityEnough;
       } else return false;
    },
    'swipeup': (ev, lev, tri) => {
       if (tri == 'up') {
          const [disX, disY] = ev.triggerPointer.displacement;
-         const isSinglePointer = ev.pointerCount == 0;
-         const isUpEnough = disY < -10;
+         const isSinglePointer = lev.maxPoint == 1;
+         const isUpEnough = disY < -GestureEvent.config.threshold;
          const isUpMost = disY < 0 && Math.abs(disY) > Math.abs(disX);
          const isMove = ev.triggerPointer.move;
-         const velocityEnough = ev.triggerPointer.velocity[1] < -0.3;
+         const velocityEnough = ev.triggerPointer.velocity[1] < -GestureEvent.config.swipeVelocityThreshold;
          return isSinglePointer && isMove && isUpMost && isUpEnough && velocityEnough;
       } else return false;
    },
    'swipedown': (ev, lev, tri) => {
       if (tri == 'up') {
          const [disX, disY] = ev.triggerPointer.displacement;
-         const isSinglePointer = ev.pointerCount == 0;
-         const isDownEnough = disY > 10;
+         const isSinglePointer = lev.maxPoint == 1;
+         const isDownEnough = disY > GestureEvent.config.threshold;
          const isDownMost = disY > 0 && Math.abs(disY) > Math.abs(disX);
          const isMove = ev.triggerPointer.move;
-         const velocityEnough = ev.triggerPointer.velocity[1] > 0.3;
+         const velocityEnough = ev.triggerPointer.velocity[1] > GestureEvent.config.swipeVelocityThreshold;
          return isSinglePointer && isMove && isDownMost && isDownEnough && velocityEnough;
       } else return false;
    },
@@ -395,11 +395,12 @@ class GestureEvent {
     * @member {Number} threshold 识别需要的最小位移
     */
    static config = {
-      threshold: 5,
-      clickThreshold: 500,
-      longtouchThreshold: 500,
-      angleThreshold: 5,
-      scaleThreshold: 0.05,
+      threshold: 5, // 识别需要的最小位移
+      swipeVelocityThreshold: 0.3, // swipe识别需要的最小速度
+      clickThreshold: 500, // click识别需要的最大时间
+      longtouchThreshold: 500, // longtouch识别需要的最小时间
+      angleThreshold: 5, // 旋转识别需要的最小角度
+      scaleThreshold: 0.05, // 缩放识别需要的最小比例
    }
 
    /**
@@ -438,6 +439,14 @@ class GestureEvent {
          border-right: 5px solid #ff0000;
          `
       );
+   }
+
+   /**
+    * @description 修改配置
+    * @param {Record<String, Number>} _config 
+    */
+   static setConfig(_config) {
+      Object.assign(GestureEvent.config, _config);
    }
 
    /**
