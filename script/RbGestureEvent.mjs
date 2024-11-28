@@ -600,6 +600,8 @@ class GestureEvent {
       if (eventState.pointerCount < 2) {
          eventState.isRotate = false;
          eventState.isPinch = false;
+         eventState.deltaAngle = 0;
+         eventState.scale = 1;
       }
       if (eventState.pointerCount == 0) {
          eventState.maxPoint = 0;
@@ -623,6 +625,8 @@ class GestureEvent {
       if (eventState.pointerCount < 2) {
          eventState.isRotate = false;
          eventState.isPinch = false;
+         eventState.deltaAngle = 0;
+         eventState.scale = 1;
       }
       if (eventState.pointerCount == 0) {
          eventState.maxPoint = 0;

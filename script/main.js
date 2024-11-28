@@ -49,8 +49,8 @@ const main = event => {
       'pinchout',
       // 'pinchend',
       // 'rotatestart',
-      // 'rotatemove',
-      // 'rotateend',
+      'rotatemove',
+      'rotateend',
    ].forEach((type, i, a) => {
       gesture.registerEventListener(button, type, event => {
          // 为每条log添加一个不同的背景色
@@ -77,10 +77,6 @@ const main = event => {
       const pointer = event.triggerPointer;
       button.style.left = pointer.displacement[0] + 'px';
       button.style.top = pointer.displacement[1] + 'px';
-      console.log(pointer.location, JSON.stringify([event.originEvent.clientX, event.originEvent.clientY]));
-   });
-   button.addEventListener('mousemove', event => {
-      console.log('mousemove -', JSON.stringify([event.clientX, event.clientY]));
    });
 
    gesture.registerEventListener(button, 'rotatestart', event => {
