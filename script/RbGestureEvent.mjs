@@ -1,6 +1,6 @@
 "use strict";
 // 版本号，用于调试
-const version = 'beta 0.2.3.b';
+const version = 'beta 0.2.3.c';
 
 /** 
  * @name debug 
@@ -34,7 +34,7 @@ class PointerInfo {
    displacement = [0, 0];
    location = [0, 0];
    startLocation = [0, 0];
-   velocityTimeOut = setTimeout(() => { }, 100);
+   velocityTimeOut = setTimeout(() => { }, 1);
 }
 
 /**
@@ -43,14 +43,21 @@ class PointerInfo {
  * @class
  * @member {Date} time 事件发生时间
  * @member {String} eventType 事件类型
- * @member {Number} scale 缩放比例
- * @member {Number} refAngle 参考角
- * @member {Array<Number>} midPoint 中点坐标
- * @member {Number} clickTimes 点击次数
+ * @member {Number} scale 相对于初始双指针间距的比例
+ * @member {Number} deltaAngle 相对于初始角度的角度变化
+ * @member {Array<Number>} midPoint 第一个和第二个指针连线的中点
+ * @member {Number} maxPoint 从第一个指针接触开始到现在的最大指针数 用法：maxPoint == 1 ? 单指操作 : 多指操作
+ * @member {Number} clickCount 点击次数
+ * @member {Array<Number>} lastClickLocation 上次点击位置
+ * @member {Date} lastClickTime 上次点击时间
+ * @member {Boolean} isRotate 是否旋转
+ * @member {Boolean} firstRotate 是否第一次触发旋转事件
+ * @member {Boolean} isPinch 是否缩放
+ * @member {Boolean} firstPinch 是否第一次触发缩放事件
  * @member {Number} startLenth 初始长度
  * @member {Number} startAngle 初始角度
  * @member {Date} startTime 初始时间
- * @member {Map<Number, PointerInfo>} pointers 指针
+ * @member {Map<Number, PointerInfo>} pointers 指针信息
  * @member {PointerInfo} triggerPointer 触发指针
  * @member {Number} pointerCount 指针数量
  * @member {PointerEvent} originEvent 原始事件
@@ -58,16 +65,29 @@ class PointerInfo {
 class EventState {
    time = Date.now();
    eventType = '';
+
    scale = 1;
-   refAngle = 0;
+   deltaAngle = 0;
    midPoint = [0, 0];
-   clickTimes = 0;
+
+   maxPoint = 0;
+   clickCount = 0;
+   lastClickLocation = [0, 0];
+   lastClickTime = Date.now();
+
+   isRotate = false;
+   firstRotate = false;
+   isPinch = false;
+   firstPinch = false;
+
    startLength = 0;
    startAngle = 0;
    startTime = Date.now();
-   pointers = new Map(); // 改为使用Map存储指针
+
+   pointers = new Map();
    triggerPointer = new PointerInfo;
    pointerCount = 0;
+
    originEvent = new PointerEvent('none');
 }
 
@@ -89,69 +109,28 @@ const eventConditions = {
    },
    'click': (ev, lev, tri) => {
       if (eventConditions['release'](ev, lev, tri) && ev.pointerCount == 0) {
-         const isInTime = ev.time - ev.startTime <= 500;
-         const isMove = ev.triggerPointer.move == false;
-         return isInTime && isMove;
+         return ev.clickCount >= 1;
       } else return false;
    },
-   'doubleclick': (() => {
-      let clickCount = 0; // click次数计数器
-      let lastClickTime = new Date(1970); // 避免第一次点击时的时间判断出错
-      let lastClickLocation = [0, 0];
-      return (ev, lev, tri) => {
-         if (tri == 'up') {
-            const pointer = ev.triggerPointer;
-            // 如果是点击事件
-            if (eventConditions['click'](ev, lev, tri)) {
-               const nowTime = Date.now();
-               // 如果两次点击的时间间隔小于550ms且两次点击的位置距离小于20px
-               if (nowTime - lastClickTime <= 550 && GestureEvent.eDistance(pointer.location, lastClickLocation) <= 20) {
-                  clickCount += 1; // 使用点击计数是为了仅在偶数次点击时触发双击事件
-               } else {
-                  clickCount = 1;
-               }
-               lastClickTime = Date.now();
-               lastClickLocation = [...pointer.location];
-            }
-            if (clickCount == 2) {
-               clickCount = 0;
-               return true;
-            } else return false;
-         } else return false;
-      };
-   })(),
-   'longtouch': (() => {
-      let count = 0; // 避免重复触发
-      let up = false; // 避免抬起时触发
-      return (ev, lev, tri) => {
-         if (tri == 'down') {
-            up = false;
-         } else if (tri == 'up') {
-            up = true;
-            count = 0;
-         }
-
-         if (tri == 'longtouch') {
-            // 如果按下时间超过500ms，没有移动，只有一个触摸点，且不是因为抬起导致只剩下一个触摸点的
-            const isDelayEnough = Date.now() - ev.startTime >= 500;
-            const isSinglePointer = ev.pointerCount == 1;
-            const isMove = ev.triggerPointer.move == false;
-            const isUp = up;
-
-            const isFirstTimes = count == 0; // 避免重复触发
-            if (isDelayEnough && isSinglePointer && isFirstTimes && isMove && !isUp) {
-               count += 1;
-               return true;
-            } else return false;
-         } else return false;
-      }
-   })(),
+   'doubleclick': (ev, lev, tri) => {
+      if (eventConditions['click'](ev, lev, tri)) {
+         return ev.clickCount % 2 == 0 && ev.clickCount > 0;
+      } else return false;
+   },
+   'longtouch': (ev, lev, tri) => {
+      if (tri == 'longtouch') {
+         const isDelayEnough = Date.now() - ev.startTime >= 500;
+         const isSinglePointer = ev.maxPoint == 1;
+         const isMove = !ev.triggerPointer.move;
+         return isDelayEnough && isSinglePointer && isMove;
+      } else return false;
+   },
 
    /* dragEvent */
    'dragstart': (ev, lev, tri) => {
       if (tri == 'move') {
          // 判断是否是单指操作，是否是第一次移动触发，是否移动了
-         const isSinglePointer = ev.pointerCount == 1;
+         const isSinglePointer = ev.maxPoint == 1;
          const isFirstMove = ev.triggerPointer.firstMove;
          const isMove = ev.triggerPointer.move;
          return isSinglePointer && isFirstMove && isMove;
@@ -160,36 +139,28 @@ const eventConditions = {
    'dragmove': (ev, lev, tri) => {
       if (tri == 'move') {
          // 判断是否是单指操作，是否不是第一次移动触发，是否移动了
-         const isSinglePointer = ev.pointerCount == 1;
+         const isSinglePointer = ev.maxPoint == 1;
          const isNotFirstMove = !ev.triggerPointer.firstMove;
          const isMove = ev.triggerPointer.move;
          return isSinglePointer && isMove && isNotFirstMove;
       } else return false;
    },
-   'dragend': (() => {
-      let isStart = false;
-      return (ev, lev, tri) => {
-         if (eventConditions['dragstart'](ev, lev, tri)) {
-            isStart = true;
-         }
-         if ((isStart && tri == 'up') || (tri == 'down' && ev.pointerCount > 1)) {
-            isStart = false;
-            return true;
-         } else return false;
-      }
-   })(),
-   'dragcancel': (() => {
-      let isStart = false;
-      return (ev, lev, tri) => {
-         if (eventConditions['dragstart'](ev, lev, tri)) {
-            isStart = true;
-         }
-         if ((isStart && tri == 'cancel') || (tri == 'down' && ev.pointerCount > 1)) {
-            isStart = false;
-            return true;
-         } else return false;
-      }
-   })(),
+   'dragend': (ev, lev, tri) => {
+      if (tri == 'up') {
+         // 指针抬起前的最大指针数为1，且是移动操作
+         const isSinglePointer = lev.maxPoint == 1;
+         const isMove = ev.triggerPointer.move;
+         return isSinglePointer && isMove;
+      } else return false;
+   },
+   'dragcancel': (ev, lev, tri) => {
+      if (tri == 'cancel') {
+         // 指针抬起前的最大指针数为1，且是移动操作
+         const isSinglePointer = lev.maxPoint == 1;
+         const isMove = ev.triggerPointer.move;
+         return isSinglePointer && isMove;
+      } else return false;
+   },
    'dragleft': (ev, lev, tri) => {
       if (eventConditions['dragmove'](ev, lev, tri)) {
          const isLeft = ev.triggerPointer.displacement[0] < 0;
@@ -265,48 +236,34 @@ const eventConditions = {
    /* pinchEvent */
    'pinchstart': (ev, lev, tri) => {
       if (tri == 'move') {
-         // 判断是否是双指操作，是否是第一次移动触发，是否移动了，两指间距是否改变了
-         const isTwoPointer = ev.pointerCount == 2;
-         const isFirstMove = ev.triggerPointer.firstMove;
-         const isMove = ev.triggerPointer.move;
-         const isZoom = Math.abs(ev.scale - 1) > 0.1;
-         return isTwoPointer && isFirstMove && isMove && isZoom;
+         // 是否是第一次触发，两指间距是否改变了
+         const isPinch = ev.isPinch;
+         const firstPinch = ev.firstPinch;
+         return isPinch && firstPinch;
       } else return false;
    },
    'pinchmove': (ev, lev, tri) => {
       if (tri == 'move') {
-         // 判断是否是双指操作，是否不是第一次移动触发 ，是否移动了，两指间距是否改变了
-         const isTwoPointer = ev.pointerCount == 2;
-         const isMove = ev.triggerPointer.move;
-         const isNotFirstMove = !ev.triggerPointer.firstMove;
-         const isZoom = Math.abs(ev.scale - 1) > 0.1;
-         return isTwoPointer && isMove && isNotFirstMove && isZoom;
+         // 是否不是第一次触发，两指间距是否改变了
+         const isPinch = ev.isPinch;
+         const firstPinch = ev.firstPinch;
+         return isPinch && !firstPinch;
       } else return false;
    },
-   'pinchend': (() => {
-      let isStart = false;
-      return (ev, lev, tri) => {
-         if (eventConditions['pinchstart'](ev, lev, tri)) {
-            isStart = true;
-         }
-         if ((isStart && tri == 'up') || (tri == 'down' && ev.pointerCount > 2)) {
-            isStart = false;
-            return true;
-         } else return false;
-      }
-   })(),
-   'pinchcancel': (() => {
-      let isStart = false;
-      return (ev, lev, tri) => {
-         if (eventConditions['pinchstart'](ev, lev, tri)) {
-            isStart = true;
-         }
-         if ((isStart && tri == 'cancel') || (tri == 'down' && ev.pointerCount > 2)) {
-            isStart = false;
-            return true;
-         } else return false;
-      }
-   })(),
+   'pinchend': (ev, lev, tri) => {
+      if (tri == 'up') {
+         const isPinch = lev.isPinch;
+         const isPinchEnd = !ev.isPinch;
+         return isPinch && isPinchEnd;
+      } else return false;
+   },
+   'pinchcancel': (ev, lev, tri) => {
+      if (tri == 'cancel') {
+         const isPinch = lev.isPinch;
+         const isPinchEnd = !ev.isPinch;
+         return isPinch && isPinchEnd;
+      } else return false;
+   },
    'pinchin': (ev, lev, tri) => {
       if (eventConditions['pinchmove'](ev, lev, tri)) {
          const isPinchIn = ev.scale < 1;
@@ -323,38 +280,34 @@ const eventConditions = {
    /* rotateEvent */
    'rotatestart': (ev, lev, tri) => {
       if (tri == 'move') {
-         // 判断是否是双指操作，是否是第一次移动触发，是否移动了，两指间角度是否改变了
-         console.log(ev.refAngle, ev.pointerCount, ev.triggerPointer.firstMove, ev.triggerPointer.move);
-         const isTwoPointer = ev.pointerCount == 2;
-         const isFirstMove = ev.triggerPointer.firstMove;
-         const isMove = ev.triggerPointer.move;
-         const isRotate = Math.abs(ev.refAngle) > 5;
-         return isTwoPointer && isFirstMove && isMove && isRotate;
+         // 是否是第一次触发，两指角度是否改变了
+         const isRotate = ev.isRotate;
+         const firstRotate = ev.firstRotate;
+         return isRotate && firstRotate;
       } else return false;
    },
    'rotatemove': (ev, lev, tri) => {
       if (tri == 'move') {
-         // 判断是否是双指操作，是否不是第一次移动触发 ，是否移动了，两指间角度是否改变了
-         const isTwoPointer = ev.pointerCount == 2;
-         const isMove = ev.triggerPointer.move;
-         const isNotFirstMove = !ev.triggerPointer.firstMove;
-         const isRotate = Math.abs(ev.refAngle) > 5;
-         return isTwoPointer && isMove && isNotFirstMove && isRotate;
+         // 是否不是第一次触发，两指角度是否改变了
+         const isRotate = ev.isRotate;
+         const firstRotate = ev.firstRotate;
+         return isRotate && !firstRotate;
       } else return false;
    },
-   'rotateend': (() => {
-      let isStart = false;
-      return (ev, lev, tri) => {
-         if (eventConditions['rotatestart'](ev, lev, tri)) {
-            isStart = true;
-         }
-         if ((isStart && tri == 'up') || (tri == 'down' && ev.pointerCount > 2)) {
-            isStart = false;
-            return true;
-         } else return false;
-      }
-   })(),
-   'rotatecancel': (ev, lev, tri) => { },
+   'rotateend': (ev, lev, tri) => {
+      if (tri == 'up') {
+         const isRotate = lev.isRotate;
+         const isRotateEnd = !ev.isRotate;
+         return isRotate && isRotateEnd;
+      } else return false;
+   },
+   'rotatecancel': (ev, lev, tri) => {
+      if (tri == 'cancel') {
+         const isRotate = lev.isRotate;
+         const isRotateEnd = !ev.isRotate;
+         return isRotate && isRotateEnd;
+      } else return false;
+   },
 };
 
 /**
@@ -387,6 +340,12 @@ class GestureEvent {
    static outEventState = new EventState;
 
    /**
+    * @description 事件是否触发
+    * @type {Record<String, (ev: EventState, lev: EventState, tri: String) => Boolean>}
+    */
+   static condition = {};
+
+   /**
     * @description 配置
     * @type {Record<String, Number>}
     * @private
@@ -394,7 +353,11 @@ class GestureEvent {
     * @member {Number} threshold 识别需要的最小位移
     */
    static config = {
-      threshold: 10,
+      threshold: 5,
+      clickThreshold: 500,
+      longtouchThreshold: 500,
+      angleThreshold: 5,
+      scaleThreshold: 0.05,
    }
 
    /**
@@ -504,12 +467,12 @@ class GestureEvent {
       const twoPointerLocation = [...eventState.pointers.values()]
          .slice(0, 2)
          .map(p => [p.location[0], p.location[1]]);
-      
+
       const nowLength = GestureEvent.eDistance(...twoPointerLocation);
       const nowAngle = GestureEvent.refAngle(...twoPointerLocation);
 
       eventState.scale = nowLength / eventState.startLength;
-      eventState.refAngle = nowAngle - eventState.startAngle;
+      eventState.deltaAngle = nowAngle - eventState.startAngle;
       eventState.midPoint = GestureEvent.midPoint(...twoPointerLocation);
    }
 
@@ -538,7 +501,7 @@ class GestureEvent {
     * 指针按下事件处理器
     * @param {PointerEvent} event 
     */
-   static pointerdown = (event) => {
+   static pointerdown = event => {
       GestureEvent.copyStateToLast();
       const eventState = GestureEvent.eventState;
 
@@ -558,6 +521,7 @@ class GestureEvent {
 
       eventState.triggerPointer = eventState.pointers.get(id);
       eventState.pointerCount++;
+      eventState.maxPoint = Math.max(eventState.maxPoint, eventState.pointerCount);
 
       if (eventState.pointerCount == 1) {
          eventState.startTime = Date.now();
@@ -574,42 +538,47 @@ class GestureEvent {
     * 指针移动事件处理器  
     * @param {PointerEvent} event
     */
-   static pointermove = (event) => {
+   static pointermove = event => {
       GestureEvent.copyStateToLast();
       const eventState = GestureEvent.eventState;
       const lastState = GestureEvent.lastEventState;
 
       if (eventState.pointerCount < 1) return;
 
-      GestureEvent.updateEventState(event, eventState, 'move'); // 因为triggerPointer是引用类型，所以即使还没更新指针数据，triggerPointer也会随着eventState.pointers更新
-
       const id = event.pointerId;
       const pointer = eventState.pointers.get(id);
-      if (!pointer) return; // 增加安全检查
-
-      // 更新指针状态
-      pointer.firstMove = !pointer.move;
-      pointer.move = true;
-      pointer.location = [event.clientX, event.clientY];
-      pointer.displacement = [
+      const displacement = [
          event.clientX - pointer.startLocation[0],
          event.clientY - pointer.startLocation[1]
       ];
+      if (Math.hypot(...displacement) > GestureEvent.config.threshold) {
+         GestureEvent.updateEventState(event, eventState, 'move'); // 因为triggerPointer是引用类型，所以即使还没更新指针数据，triggerPointer也会随着eventState.pointers更新
 
-      GestureEvent.updateVelocity(pointer, lastState, id);
+         // 更新指针状态
+         pointer.firstMove = !pointer.move;
+         pointer.move = true;
+         pointer.location = [event.clientX, event.clientY];
+         pointer.displacement = displacement;
 
-      if (eventState.pointerCount == 2) {
-         GestureEvent.updateTwoPointerState(eventState);
+         GestureEvent.updateVelocity(pointer, lastState, id);
+
+         if (eventState.pointerCount >= 2) {
+            GestureEvent.updateTwoPointerState(eventState);
+         }
+         eventState.firstRotate = !eventState.isRotate;
+         eventState.isRotate = Math.abs(eventState.deltaAngle) >= GestureEvent.config.angleThreshold || eventState.isRotate;
+         eventState.firstPinch = !eventState.isPinch;
+         eventState.isPinch = Math.abs(1 - eventState.scale) >= GestureEvent.config.scaleThreshold || eventState.isPinch;
+
+         GestureEvent.copyState();
       }
-
-      GestureEvent.copyState();
    }
 
    /**
     * 指针抬起事件处理器
     * @param {PointerEvent} event
     */
-   static pointerup = (event) => {
+   static pointerup = event => {
       GestureEvent.copyStateToLast();
       const eventState = GestureEvent.eventState;
 
@@ -617,6 +586,24 @@ class GestureEvent {
 
       eventState.pointers.delete(event.pointerId);
       eventState.pointerCount--;
+      if (eventState.maxPoint == 1 && eventState.startTime - eventState.time < 500 && !eventState.triggerPointer.move) {
+         if (GestureEvent.eDistance(eventState.triggerPointer.location, eventState.lastClickLocation) < 20 && Date.now() - eventState.lastClickTime < 500) {
+            eventState.clickCount++;
+         } else {
+            eventState.clickCount = 1;
+         }
+         eventState.lastClickTime = Date.now();
+         eventState.lastClickLocation = [...eventState.triggerPointer.location];
+      } else {
+         eventState.clickCount = 0;
+      }
+      if (eventState.pointerCount < 2) {
+         eventState.isRotate = false;
+         eventState.isPinch = false;
+      }
+      if (eventState.pointerCount == 0) {
+         eventState.maxPoint = 0;
+      }
 
       GestureEvent.copyState();
    }
@@ -625,7 +612,7 @@ class GestureEvent {
     * 指针取消事件处理器
     * @param {PointerEvent} event 
     */
-   static pointerCancel = (event) => {
+   static pointerCancel = event => {
       GestureEvent.copyStateToLast();
       const eventState = GestureEvent.eventState;
 
@@ -633,6 +620,13 @@ class GestureEvent {
 
       eventState.pointers.delete(event.pointerId);
       eventState.pointerCount--;
+      if (eventState.pointerCount < 2) {
+         eventState.isRotate = false;
+         eventState.isPinch = false;
+      }
+      if (eventState.pointerCount == 0) {
+         eventState.maxPoint = 0;
+      }
 
       GestureEvent.copyState();
    }
@@ -762,11 +756,11 @@ class GestureEvent {
    static downDispatch() {
       GestureEvent.dispatchEvent(this, 'down');
       if (GestureEvent.eventState.pointerCount == 1)
-         this[LONGTOUCH] = setInterval(() => {
+         this[LONGTOUCH] = setTimeout(() => {
             GestureEvent.longtouchDispatch(this);
-         }, 100);
+         }, GestureEvent.config.longtouchThreshold);
       else if (this[LONGTOUCH])
-         clearInterval(this[LONGTOUCH]);
+         clearTimeout(this[LONGTOUCH]);
    }
 
    static longtouchDispatch(element) {
@@ -780,16 +774,16 @@ class GestureEvent {
 
    static upDispatch() {
       GestureEvent.dispatchEvent(this, 'up');
-      clearInterval(this[LONGTOUCH]);
+      clearTimeout(this[LONGTOUCH]);
    }
 
    static outDispatch() {
-      clearInterval(this[LONGTOUCH]);
+      clearTimeout(this[LONGTOUCH]);
    }
 
    static cancelDispatch() {
       GestureEvent.dispatchEvent(this, 'cancel');
-      clearInterval(this[LONGTOUCH]);
+      clearTimeout(this[LONGTOUCH]);
    }
 
    /**
