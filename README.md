@@ -12,24 +12,29 @@
 ## **核心功能**
 ### 1. **手势支持列表**
 以下是可绑定的手势事件类型：
-| **手势类型**  | **描述**                         |
-| ------------- | -------------------------------- |
-| `press`       | 按下元素时触发                   |
-| `release`     | 松开元素时触发                   |
-| `click`       | 点击元素时触发                   |
-| `doubleclick` | 双击、四击等连续偶数次点击时触发 |
-| `longtouch`   | 长时间按压触发                   |
-| `dragstart`   | 单指拖动开始时触发               |
-| `dragend`     | 单指拖动结束时触发               |
-| `dragmove`    | 单指拖动过程中触发               |
-| `swipeleft`   | 快速向左滑动触发                 |
-| `swiperight`  | 快速向右滑动触发                 |
-| `pinchstart`  | 捏合手势开始时触发               |
-| `pinchin`     | 捏合缩小时触发                   |
-| `pinchout`    | 捏合放大时触发                   |
-| `rotatestart` | 旋转手势开始时触发               |
-| `rotatemove`  | 旋转过程中触发                   |
-| `rotateend`   | 旋转手势结束时触发               |
+| **手势类型**      | **描述**                         |
+| ----------------- | -------------------------------- |
+| `press`           | 按下元素时触发                   |
+| `release`         | 松开元素时触发                   |
+| `click`           | 点击元素时触发                   |
+| `doubleclick`     | 双击、四击等连续偶数次点击时触发 |
+| `longtouch`       | 长时间按压触发                   |
+| `dragstart`       | 单指拖动开始时触发               |
+| `dragend`         | 单指拖动结束时触发               |
+| `dragmove`        | 单指拖动过程中触发               |
+| `doubeldragstart` | 双指拖动开始时触发               |
+| `doubeldragend`   | 双指拖动结束时触发               |
+| `doubeldragmove`  | 双指拖动过程中触发               |
+| `swipeup`         | 快速向上滑动触发                 |
+| `swipedown`       | 快速向下滑动触发                 |
+| `swipeleft`       | 快速向左滑动触发                 |
+| `swiperight`      | 快速向右滑动触发                 |
+| `pinchstart`      | 捏合手势开始时触发               |
+| `pinchin`         | 捏合缩小时触发                   |
+| `pinchout`        | 捏合放大时触发                   |
+| `rotatestart`     | 旋转手势开始时触发               |
+| `rotatemove`      | 旋转过程中触发                   |
+| `rotateend`       | 旋转手势结束时触发               |
 
 
 ## 使用方法
