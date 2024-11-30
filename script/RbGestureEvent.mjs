@@ -1,6 +1,6 @@
 "use strict";
 // 版本号，用于调试
-const version = 'beta 0.2.5.a';
+const version = '1.0.0';
 
 /** 
  * @name debug 
