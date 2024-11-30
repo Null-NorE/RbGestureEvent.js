@@ -7,7 +7,7 @@
 - **与 DOM API 一致**：模仿 `addEventListener` 的使用模式。
 - **现代化浏览器支持**：兼容 Chrome 79+，不使用高级语法如空值合并运算符。
 - **特定优化**：专为 `RbPictureViewer.js` 和 `RbNodePipeline.js` 设计，但也易于集成到其他项目。
----
+
 
 ## **核心功能**
 ### 1. **手势支持列表**
@@ -31,7 +31,7 @@
 | `rotatemove`  | 旋转过程中触发                   |
 | `rotateend`   | 旋转手势结束时触发               |
 
----
+
 ## 使用方法
 
 ### 引入库
@@ -99,7 +99,7 @@ RbGestureEvent.setConfig({
 });
 ```
 
----
+
 
 ## **事件状态对象 (`RbEventState`)**
 事件处理函数接收一个 `RbEventState` 对象，包含以下信息：
@@ -115,7 +115,7 @@ RbGestureEvent.setConfig({
 | `isPinch`     | `Boolean`      | 是否正在缩放       |
 | `pointers`    | `Map`          | 当前指针信息       |
 | `originEvent` | `PointerEvent` | 原始事件对象       |
----
+
 
 ### **自定义条件（高级）**
 不推荐修改手势条件，避免影响未来版本兼容性。
@@ -153,7 +153,7 @@ RbGestureEvent.removeCondition('customEvent');
 - 欢迎通过 PR 和 Issue 提交反馈和改进建议。
 > **致谢**：对于前期原型和主体架构以及Github展示页面设计的工作，我要特别感谢 **Null** **-** 的贡献。
 
----
+
 
 ## **许可证**
 MIT 许可证。详细内容请参阅 LICENSE 文件。
