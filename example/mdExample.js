@@ -41,14 +41,14 @@ RbGestureEvent.setCondition('eventName', (eventSate, lastEventState, trigger) =>
 RbGestureEvent.removeCondition('eventName');
 
 // EXAMPLE: 修改配置
-// 可配置项
+// 可配置项和默认值
 // static config = {
-//    threshold: 5, // 识别需要的最小位移
-//    swipeVelocityThreshold: 0.3, // swipe识别需要的最小速度
-//    clickThreshold: 500, // click识别需要的最大时间
-//    longtouchThreshold: 500, // longtouch识别需要的最小时间
-//    angleThreshold: 5, // 旋转识别需要的最小角度
-//    scaleThreshold: 0.05, // 缩放识别需要的最小比例
+//    threshold: 5, // 识别需要的最小位移（单位px）
+//    swipeVelocityThreshold: 0.3, // swipe识别需要的最小速度(单位px/ms）
+//    clickThreshold: 500, // click识别需要的最大时间（单位ms）
+//    longtouchThreshold: 500, // longtouch识别需要的最小时间(单位ms）
+//    angleThreshold: 5, // 旋转识别需要的最小角度(单位deg）
+//    scaleThreshold: 0.05, // 缩放识别需要的最小比例变化(无单位）
 // }
 RbGestureEvent.setConfig({
    // 配置项：内容
