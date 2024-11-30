@@ -145,7 +145,8 @@ RbGestureEvent.removeCondition('customEvent');
 
 - 欢迎通过 PR 和 Issue 提交反馈和改进建议。
 > **致谢**：对于前期原型和主体架构以及Github展示页面设计的工作，我要特别感谢 **Null** **-** 的贡献。
-> **致谢**：提供代码支持和完善了项目的Nor.E也应当被感谢 --From Null -
+
+> **致谢**：提供代码支持和完善了项目的**Nor.E**也应当被感谢 --From Null -
 
 
 ## **许可证**
