@@ -130,7 +130,7 @@ const eventConditions = {
    /* dragEvent */
    'dragstart': (ev, lev, tri) => {
       if (tri == 'move' || tri == 'up') {
-         // 判断当前是否是单指操作，是否是第一次移动触发，是否移动了
+         // 判断当前是否是单指操作，是否是第一次移动触发或双指变单指触发，是否移动了
          const isSinglePointer = ev.pointerCount == 1;
          const isSinglePointerLast = lev.pointerCount == 1;
          const isFirstMove = ev.triggerPointer.firstMove;
@@ -158,7 +158,7 @@ const eventConditions = {
    },
    'dragcancel': (ev, lev, tri) => {
       if (tri == 'cancel' || tri == 'down') {
-         //  前一事件的指针数为1而现在不是，且上一次事件中已移动
+         // 前一事件的指针数为1而现在不是，且上一次事件中已移动
          const isSinglePointer = lev.pointerCount == 1;
          const isSinglePointerNow = ev.pointerCount != 1;
          const isMove = ev.triggerPointer.move;
@@ -193,11 +193,12 @@ const eventConditions = {
    /* doubelDragEvent */
    'doubledragstart': (ev, lev, tri) => {
       if (tri == 'move' || tri == 'down') {
-         // 判断是否是双指操作，是否是第一次移动触发，是否移动了
+         // 判断当前是否是单指操作，是否是第一次移动触发或双指变单指触发，是否移动了
          const isTwoPointer = ev.pointerCount == 2;
+         const isSinglePointerLast = lev.pointerCount == 2;
          const isFirstMove = ev.triggerPointer.firstMove || lev.triggerPointer.firstMove;
          const isMove = ev.triggerPointer.move || lev.triggerPointer.move;
-         return isTwoPointer && isFirstMove && isMove;
+         return isTwoPointer && (isFirstMove || !isSinglePointerLast) && isMove;
       } else return false;
    },
    'doubledragmove': (ev, lev, tri) => {
@@ -210,21 +211,21 @@ const eventConditions = {
       } else return false;
    },
    'doubledragend': (ev, lev, tri) => {
-      if (tri == 'up') {
-         // 指针抬起前的最大指针数为2，且是移动操作
-         const isTwoPointer = lev.maxPoint == 2;
-         const isTwoPointerNow = ev.pointerCount == 0;
+      if (tri == 'up' || tri == 'down') {
+         // 前一事件的指针数为2而现在不是，且上一次事件中已移动
+         const isSinglePointer = lev.pointerCount == 1;
+         const isSinglePointerNow = ev.pointerCount != 1;
          const isMove = ev.triggerPointer.move;
-         return isTwoPointer && isMove && !isTwoPointerNow;
+         return isSinglePointer && isMove && isSinglePointerNow;
       } else return false;
    },
    'doubledragcancel': (ev, lev, tri) => {
-      if (tri == 'cancel') {
-         // 指针抬起前的最大指针数为2，且是移动操作
-         const isTwoPointer = lev.maxPoint == 2;
-         const isTwoPointerNow = ev.pointerCount == 0;
+      if (tri == 'cancel' || tri == 'down') {
+         // 前一事件的指针数为1而现在不是，且上一次事件中已移动
+         const isSinglePointer = lev.pointerCount == 1;
+         const isSinglePointerNow = ev.pointerCount != 1;
          const isMove = ev.triggerPointer.move;
-         return isTwoPointer && isMove && !isTwoPointerNow;
+         return isSinglePointer && isMove && isSinglePointerNow;
       } else return false;
    },
 
