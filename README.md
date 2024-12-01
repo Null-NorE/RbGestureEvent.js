@@ -51,7 +51,7 @@ const yourElement = document.querySelector('your-element');
 ```javascript
 // RbGestureEvent.registerEventListener(被注册的元素, '事件类型', 事件处理函数);
 // 事件类型见表格
-// 事件处理函数的参数是一个RbEventState对象，具体见API的RbEventState类
+// 事件处理函数的参数是一个RbEventState对象，详情见下文
 // 和原生API的行为相同，传入的事件处理函数的this会被绑定到被注册的元素上
 RbGestureEvent.registerEventListener(yourElement, 'click', eventSate => {
     console.log('click');
@@ -164,4 +164,4 @@ RbGestureEvent.removeCondition('customEvent');
 
 
 ## **许可证**
-MIT 许可证。详细内容请参阅 LICENSE 文件。
+MIT 许可证。详细内容请参阅 [LICENSE](LICENSE) 文件。
