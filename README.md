@@ -71,17 +71,31 @@ RbGestureEvent.cancelEventListener(yourElement, 'click', funcClick);
 ### **事件状态对象 (`RbEventState`)**
 事件处理函数接收一个 `RbEventState` 对象，包含以下信息：
 
-| **属性**      | **类型**       | **描述**           |
-| ------------- | -------------- | ------------------ |
-| `eventType`   | `String`       | 当前事件类型       |
-| `scale`       | `Number`       | 当前缩放比例       |
-| `deltaAngle`  | `Number`       | 相对初始角度的变化 |
-| `midPoint`    | `Array`        | 两指的中点坐标     |
-| `clickCount`  | `Number`       | 当前点击次数       |
-| `isRotate`    | `Boolean`      | 是否正在旋转       |
-| `isPinch`     | `Boolean`      | 是否正在缩放       |
-| `pointers`    | `Map`          | 当前指针信息       |
-| `originEvent` | `PointerEvent` | 原始事件对象       |
+| **属性**          | **类型**                   | **描述**               |
+| ----------------- | -------------------------- | ---------------------- |
+| `eventType`       | `String`                   | 当前事件类型           |
+| `scale`           | `Number`                   | 当前缩放比例           |
+| `deltaAngle`      | `Number`                   | 相对初始角度的变化     |
+| `midPoint`        | `Array<Number>`            | 两指的中点坐标         |
+| `midDisplacement` | `Array<Number>`            | 两指中点的位移         |
+| `clickCount`      | `Number`                   | 当前点击次数           |
+| `isRotate`        | `Boolean`                  | 是否正在旋转           |
+| `isPinch`         | `Boolean`                  | 是否正在缩放           |
+| `pointers`        | `Map<Number, PointerInfo>` | 全部指针信息           |
+| `triggerPointer`  | `PointerInfo`              | 触发本次事件的指针信息 |
+| `originEvent`     | `PointerEvent`             | 原始指针事件对象       |
+
+>`RbEventState.pointers`是一个Map结构，存储每个指针的id和对应的`PointerInfo`对象
+
+### **指针信息对象（`PointerInfo`）**
+项目使用`PointerInfo`存储指针参数，包含以下信息
+
+| **属性**       | **类型**        | **描述**         |
+| -------------- | --------------- | ---------------- |
+| `move`         | `Boolean`       | 该指针是否移动过 |
+| `velocity`     | `Array<Number>` | 指针当前移动速度 |
+| `displacement` | `Array<Number>` | 指针位移         |
+| `location`     | `Array<Number>` | 指针位置         |
 
 ### 调试辅助
 使用以下代码可以输出额外的调试信息。
