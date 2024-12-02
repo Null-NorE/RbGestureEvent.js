@@ -1,4 +1,11 @@
 "use strict";
+/**
+ * @author Nor.E & Null -
+ * @description RbGestureEvent.js
+ * @version 1.0.0
+ * @license MIT
+ * @repository Null-NorE/RbGestureEvent
+ */
 // 版本号，用于调试
 const version = '1.0.0';
 
