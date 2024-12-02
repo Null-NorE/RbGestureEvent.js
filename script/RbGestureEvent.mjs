@@ -2,12 +2,12 @@
 /**
  * @author Nor.E & Null -
  * @description RbGestureEvent.js
- * @version 1.0.0
+ * @version 1.0.1
  * @license MIT
  * @repository Null-NorE/RbGestureEvent
  */
 // 版本号，用于调试
-const version = '1.0.0';
+const version = '1.0.1';
 
 /** 
  * @name debug 
@@ -220,8 +220,8 @@ const eventConditions = {
    'doubledragend': (ev, lev, tri) => {
       if (tri == 'up' || tri == 'down') {
          // 前一事件的指针数为2而现在不是，且上一次事件中已移动
-         const isSinglePointer = lev.pointerCount == 1;
-         const isSinglePointerNow = ev.pointerCount != 1;
+         const isSinglePointer = lev.pointerCount == 2;
+         const isSinglePointerNow = ev.pointerCount != 2;
          const isMove = ev.triggerPointer.move;
          return isSinglePointer && isMove && isSinglePointerNow;
       } else return false;
@@ -229,8 +229,8 @@ const eventConditions = {
    'doubledragcancel': (ev, lev, tri) => {
       if (tri == 'cancel' || tri == 'down') {
          // 前一事件的指针数为1而现在不是，且上一次事件中已移动
-         const isSinglePointer = lev.pointerCount == 1;
-         const isSinglePointerNow = ev.pointerCount != 1;
+         const isSinglePointer = lev.pointerCount == 2;
+         const isSinglePointerNow = ev.pointerCount != 2;
          const isMove = ev.triggerPointer.move;
          return isSinglePointer && isMove && isSinglePointerNow;
       } else return false;

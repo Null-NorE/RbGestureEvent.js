@@ -1,6 +1,6 @@
 {
   "name": "rb-gesture-event",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "一个现代 Web 手势事件库，为长按、缩放、旋转等高级手势提供支持，模仿原生事件 API，便于集成到 Web 应用中。",
   "main": "./script/RbGestureEvent.js",
   "homepage": "https://null-nore.github.io/RbGestureEvent/",
@@ -23,5 +23,8 @@
     "terser-webpack-plugin": "^5.3.10",
     "webpack": "^5.96.1",
     "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "eslint-scope": "^5.1.1"
   }
 }
