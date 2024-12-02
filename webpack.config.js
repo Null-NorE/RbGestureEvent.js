@@ -7,7 +7,7 @@ module.exports = {
    entry: './script/RbGestureEvent.mjs',
    mode: 'production',
    output: {
-      filename: 'RbGestureEvent.min.mjs',
+      filename: 'RbGestureEvent.min.js',
       path: path.resolve(__dirname, 'dist'),
       module: true,
    },
