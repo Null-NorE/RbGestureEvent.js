@@ -148,7 +148,8 @@ RbGestureEvent.removeCondition('customEvent');
 
 ## 示例
 
-[null-nore.github.io/RbGestureEvent/](null-nore.github.io/RbGestureEvent/)
+[null-nore.github.io/RbGestureEvent/](null-nore.github.io/RbGestureEvent.js/)
+
 [文中代码](example/mdExample.js)
 
 ## 项目结构
