@@ -3,19 +3,30 @@ const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
 const { version, author, name, homepage, license } = require('./package.json');
 
-module.exports = {
-   entry: './script/RbGestureEvent.mjs',
+const banner = `/*!
+* ${name} ${version}
+* ©${new Date().getFullYear()} ${author}
+* Released under the ${license} license
+${homepage ? `* ${homepage}` : ''}
+*/`;
+
+// 创建配置工厂函数
+const createConfig = (filename, libraryType, minimize = false) => ({
    mode: 'production',
-   output: {
-      filename: 'RbGestureEvent.min.js',
-      path: path.resolve(__dirname, 'dist'),
-      // module: true,
+   entry: './script/RbGestureEvent.mjs',
+   experiments: {
+      outputModule: true,
    },
-   // experiments: {
-   //    outputModule: true,
-   // },
+   output: {
+      filename,
+      path: path.resolve(__dirname, 'dist'),
+      library: {
+         ...(libraryType === 'var' && { name: 'RbGestureEvent' }),
+         type: libraryType,
+      },
+   },
    optimization: {
-      minimize: true, // 启用代码压缩
+      minimize,
       minimizer: [
          new TerserPlugin({
             terserOptions: {
@@ -23,20 +34,20 @@ module.exports = {
                   comments: /@preserve|@license|@cc_on|!/,
                },
             },
-            extractComments: false, // 不将注释提取到单独的文件中
+            extractComments: false,
          }),
          new webpack.BannerPlugin({
-            entryOnly: true, // 是否仅在入口包中输出 banner 信息
-            banner: () => {
-               return `/*!\n`
-                  + `* ${name} ${version}` + '\n'
-                  + `* ©${new Date().getFullYear()} ${author}` + '\n'
-                  + `* Released under the ${license} license` + '\n'
-                  + (homepage ? `* ${homepage}` + '\n' : '')
-                  + `*/`;
-            },
+            banner,
             raw: true,
          }),
       ],
    },
-};
+   plugins: [],
+});
+
+// 导出配置数组
+module.exports = [
+   createConfig('RbGestureEvent.js', 'var', false),
+   createConfig('RbGestureEvent.min.js', 'var', true),
+   createConfig('RbGestureEvent.esm.min.mjs', 'module', true),
+];
