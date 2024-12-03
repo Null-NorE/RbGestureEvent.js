@@ -9,11 +9,11 @@ module.exports = {
    output: {
       filename: 'RbGestureEvent.min.js',
       path: path.resolve(__dirname, 'dist'),
-      module: true,
+      // module: true,
    },
-   experiments: {
-      outputModule: true,
-   },
+   // experiments: {
+   //    outputModule: true,
+   // },
    optimization: {
       minimize: true, // 启用代码压缩
       minimizer: [
