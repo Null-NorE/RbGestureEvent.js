@@ -1,5 +1,5 @@
 "use strict";
-import { RbGestureEvent, RbEventState } from './RbGestureEvent.mjs';
+import { RbGestureEvent } from '../dist/RbGestureEvent.esm.min.mjs';
 
 /**
  * @name main
@@ -108,8 +108,8 @@ const main = event => {
    document.body.appendChild(mtp);
 
    gesture.registerEventListener(touchBox, 'doubledragstart', event => {
-      button.style.transformOrigin = 
-      `${event.midPoint[0] - button.offsetLeft}px ${event.midPoint[1] - button.offsetTop}px`
+      button.style.transformOrigin =
+         `${event.midPoint[0] - button.offsetLeft}px ${event.midPoint[1] - button.offsetTop}px`
       if (pageDebug) {
          [tp1, mtp, tp2].forEach(tp => {
             tp.style.display = 'block';
