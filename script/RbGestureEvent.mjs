@@ -649,9 +649,12 @@ class GestureEvent {
       eventState.pointers.delete(event.pointerId);
       eventState.pointerCount--;
       // 判定是否是点击事件
-      if (eventState.maxPoint == 1 && eventState.startTime - eventState.time < 500 && !eventState.triggerPointer.move) {
+      if (eventState.maxPoint == 1
+         && eventState.startTime - eventState.time < 500
+         && !eventState.triggerPointer.move) {
          // 判定是否是连续点击事件
-         if (GestureEvent.eDistance(eventState.triggerPointer.location, eventState.lastClickLocation) < 20 && Date.now() - eventState.lastClickTime < 500) {
+         if (GestureEvent.eDistance(eventState.triggerPointer.location, eventState.lastClickLocation) < 20
+            && Date.now() - eventState.lastClickTime < 500) {
             eventState.clickCount++;
          } else {
             eventState.clickCount = 1;
