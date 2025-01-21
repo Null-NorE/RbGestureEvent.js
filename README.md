@@ -3,6 +3,7 @@
 一个现代 Web 手势事件库，为长按、缩放、旋转等高级手势提供支持，模仿原生事件 API，便于集成到 Web 应用中。
 
 ## **设计目标**
+
 - **支持多种手势**：如长按、拖动、捏合、旋转等。
 - **与 DOM API 一致**：模仿 `addEventListener` 的使用模式。
 - **多端兼容**：为PC和手机提供一致的事件处理逻辑
@@ -10,9 +11,11 @@
 - **特定优化**：专为 `RbPictureViewer.js` 和 `RbNodePipeline.js` 设计，但也易于集成到其他项目。
 
 ### **手势支持列表**
+
 以下是可绑定的手势事件类型：
-| **手势类型**      | **描述**                         |
-| ----------------- | -------------------------------- |
+
+| **手势类型**  | **描述**                   |
+| ------------------- | -------------------------------- |
 | `press`           | 按下元素时触发                   |
 | `release`         | 松开元素时触发                   |
 | `click`           | 点击元素时触发                   |
@@ -35,10 +38,10 @@
 | `rotatemove`      | 旋转过程中触发                   |
 | `rotateend`       | 旋转手势结束时触发               |
 
-
 ## 使用方法
 
 ### 引入库
+
 ```javascript
 import { RbGestureEvent, RbEventState } from 'PATH/TO/RbGestureEvent.mjs';
 // RbGestureEvent是主要的手势事件类
@@ -48,6 +51,7 @@ const yourElement = document.querySelector('your-element');
 ```
 
 ### 绑定事件
+
 ```javascript
 // RbGestureEvent.registerEventListener(被注册的元素, '事件类型', 事件处理函数);
 // 事件类型见表格
@@ -59,6 +63,7 @@ RbGestureEvent.registerEventListener(yourElement, 'click', eventSate => {
 ```
 
 ### 取消事件监听
+
 ```javascript
 const funcClick = eventSate => {
    console.log('click');
@@ -69,10 +74,11 @@ RbGestureEvent.cancelEventListener(yourElement, 'click', funcClick);
 ```
 
 ### **事件状态对象 (`RbEventState`)**
+
 事件处理函数接收一个 `RbEventState` 对象，包含以下信息：
 
-| **属性**          | **类型**                   | **描述**               |
-| ----------------- | -------------------------- | ---------------------- |
+| **属性**      | **类型**               | **描述**         |
+| ------------------- | ---------------------------- | ---------------------- |
 | `eventType`       | `String`                   | 当前事件类型           |
 | `scale`           | `Number`                   | 当前缩放比例           |
 | `deltaAngle`      | `Number`                   | 相对初始角度的变化     |
@@ -85,28 +91,34 @@ RbGestureEvent.cancelEventListener(yourElement, 'click', funcClick);
 | `triggerPointer`  | `PointerInfo`              | 触发本次事件的指针信息 |
 | `originEvent`     | `PointerEvent`             | 原始指针事件对象       |
 
->`RbEventState.pointers`是一个Map结构，存储每个指针的id和对应的`PointerInfo`对象
+> `RbEventState.pointers`是一个Map结构，存储每个指针的id和对应的 `PointerInfo`对象
 
 ### **指针信息对象（`PointerInfo`）**
-项目使用`PointerInfo`存储指针参数，包含以下信息
 
-| **属性**       | **类型**        | **描述**         |
-| -------------- | --------------- | ---------------- |
+项目使用 `PointerInfo`存储指针参数，包含以下信息
+
+| **属性**   | **类型**    | **描述**   |
+| ---------------- | ----------------- | ---------------- |
 | `move`         | `Boolean`       | 该指针是否移动过 |
 | `velocity`     | `Array<Number>` | 指针当前移动速度 |
 | `displacement` | `Array<Number>` | 指针位移         |
 | `location`     | `Array<Number>` | 指针位置         |
 
 ### 调试辅助
+
 使用以下代码可以输出额外的调试信息。
->包括启用时输出版本信息，重复注册事件的警告信息和覆盖原有判断条件的警告。
+
+> 包括启用时输出版本信息，重复注册事件的警告信息和覆盖原有判断条件的警告。
+
 ```javascript
 // EXAMPLE: 启用调试模式
 RbGestureEvent.setDebug(true); // 关闭则设置false
 ```
 
 ### 自定义配置
-使用静态方法`RbGestureEvent.setConfig`可以修改时间判定的阈值，参数是一个对象，具体如下：
+
+使用静态方法 `RbGestureEvent.setConfig`可以修改时间判定的阈值，参数是一个对象，具体如下：
+
 ```javascript
 // EXAMPLE: 修改配置
 // 可配置项和默认值
@@ -126,9 +138,11 @@ RbGestureEvent.setConfig({
 ```
 
 ### **自定义条件（高级）**
+
 不推荐修改手势条件，避免影响未来版本兼容性。
 
 #### 添加自定义事件条件
+
 ```javascript
 RbGestureEvent.setCondition('customEvent', (eventState, lastEventState, trigger) => {
     return eventState.pointerCount === 3; // 仅三指触控触发
@@ -142,6 +156,7 @@ RbGestureEvent.setCondition('customEvent', (eventState, lastEventState, trigger)
 ```
 
 #### 移除自定义事件条件
+
 ```javascript
 RbGestureEvent.removeCondition('customEvent');
 ```
@@ -156,13 +171,14 @@ RbGestureEvent.removeCondition('customEvent');
 
 本项目仅有一个mjs文件，直接复制进去就能用。
 
+## TODO
+
+- [ ] 将静态类成员的打包方式改为基于闭包的打包方法
+
 ## 贡献
 
 - 欢迎通过 PR 和 Issue 提交反馈和改进建议。
-> **致谢**：对于前期原型和主体架构以及Github展示页面设计的工作，我要特别感谢 **Null** **-** 的贡献。
-
-> **致谢**：提供代码支持和完善了项目的**Nor.E**也应当被感谢 --From Null -
-
 
 ## **许可证**
+
 MIT 许可证。详细内容请参阅 [LICENSE](LICENSE) 文件。
