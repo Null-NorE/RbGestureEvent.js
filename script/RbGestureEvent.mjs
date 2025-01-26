@@ -2,12 +2,12 @@
 /**
  * @author Nor.E & Null -
  * @description RbGestureEvent.js
- * @version 1.0.1
+ * @version 1.0.2
  * @license MIT
  * @repository Null-NorE/RbGestureEvent
  */
 // 版本号，用于调试
-const version = '1.0.1';
+const version = '1.0.2';
 
 /** 
  * @name debug 
@@ -19,7 +19,7 @@ let debug = false;
 
 const EVENTLIST = Symbol.for('RBEventList');
 const LONGTOUCH = Symbol.for('RBLongtouch');
-const CBMAPPING = Symbol.for('RBCallbackMapping');
+const CALLBACKMAP = Symbol.for('RBCallbackMap');
 
 /**
  * @name PointerInfo
@@ -137,7 +137,7 @@ const eventConditions = {
    /* dragEvent */
    'dragstart': (ev, lev, tri) => {
       if (tri == 'move' || tri == 'up') {
-         // 判断当前是否是单指操作，是否是第一次移动触发或双指变单指触发，是否移动了
+         // 判断当前是否是单指操作，是否是第一次移动触发或是被双指变单指触发，是否移动了
          const isSinglePointer = ev.pointerCount == 1;
          const isSinglePointerLast = lev.pointerCount == 1;
          const isFirstMove = ev.triggerPointer.firstMove;
@@ -200,7 +200,7 @@ const eventConditions = {
    /* doubelDragEvent */
    'doubledragstart': (ev, lev, tri) => {
       if (tri == 'move' || tri == 'down') {
-         // 判断当前是否是单指操作，是否是第一次移动触发或双指变单指触发，是否移动了
+         // 判断当前是否是双指操作，是否是第一次移动触发，或是被单指变双指触发，是否移动了
          const isTwoPointer = ev.pointerCount == 2;
          const isSinglePointerLast = lev.pointerCount == 2;
          const isFirstMove = ev.triggerPointer.firstMove || lev.triggerPointer.firstMove;
@@ -736,16 +736,16 @@ class GestureEvent {
       // 判断是否是匿名函数
       if (callback.name != '') {
          // 将未修饰回调函数和修饰后的回调函数的对应关系保存起来
-         if (!element[CBMAPPING]) {
-            element[CBMAPPING] = new Map;
+         if (!element[CALLBACKMAP]) {
+            element[CALLBACKMAP] = new Map;
             boundcallback = callback.bind(element);
-            element[CBMAPPING].set(callback, {
+            element[CALLBACKMAP].set(callback, {
                boundcallback: boundcallback,
                count: 1
             });
-         } else if (element[CBMAPPING].has(callback)) { // 如果已经注册过了，直接取出来，计数加一，debug模式下输出重复注册警告
+         } else if (element[CALLBACKMAP].has(callback)) { // 如果已经注册过了，直接取出来，计数加一，debug模式下输出重复注册警告
             if (debug) console.warn('callback already registered\n', callback);
-            const temp = element[CBMAPPING].get(callback);
+            const temp = element[CALLBACKMAP].get(callback);
             boundcallback = temp.boundcallback;
             temp.count += 1;
          }
@@ -769,16 +769,16 @@ class GestureEvent {
    static cancelEventListener(element, type, callback) {
       if (debug) console.log(`cancel event: ${type} on`, element);
 
-      if (element[CBMAPPING].has(callback)) {
+      if (element[CALLBACKMAP].has(callback)) {
          const list = element[EVENTLIST][type];
-         let { boundcallback, count } = element[CBMAPPING].get(callback);
+         let { boundcallback, count } = element[CALLBACKMAP].get(callback);
 
          const index = list.indexOf(boundcallback);
          list.splice(index, 1);
 
          count -= 1;
          if (count == 0)
-            element[CBMAPPING].delete(callback);
+            element[CALLBACKMAP].delete(callback);
 
          if (element[EVENTLIST][type].length == 0) {
             delete element[EVENTLIST][type];
