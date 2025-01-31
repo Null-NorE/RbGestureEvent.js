@@ -2,12 +2,12 @@
 /**
  * @author Nor.E & Null -
  * @description RbGestureEvent.js
- * @version 1.1.0
+ * @version 1.1.1
  * @license MIT
  * @repository Null-NorE/RbGestureEvent
  */
 // 版本号，用于调试
-const version = '1.1.0';
+const version = '1.1.1';
 
 /** 
  * @name debug 
@@ -754,11 +754,10 @@ class Private {
  */
 class Public {
    /**
-    * @description 构造函数
-    * @constructor
-    * @returns {Public} - 返回一个RbGestureEvent实例
+    * @description 初始化函数
+    * @returns {void}
     */
-   constructor() {
+   static initialize() {
       document.addEventListener('DOMContentLoaded', () => {
          [
             ['pointerdown', Private.pointerdown],
@@ -915,7 +914,7 @@ class Public {
    }
 }
 
-const _ = new Public(); // 触发构造函数
+Public.initialize(); // 执行初始化
 
 export {
    Public as RbGestureEvent,
