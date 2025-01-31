@@ -1,5 +1,7 @@
 # RbGestureEvent.js
 
+> 中文版本[README_CN](./README_CN.md "中文版")
+
 A modern web gesture event library that supports advanced gestures such as long press, pinch, and rotate, mimicking the native event API for easy integration into web applications.
 
 ## **Design Goals**
@@ -14,29 +16,29 @@ A modern web gesture event library that supports advanced gestures such as long 
 
 The following are the gesture event types that can be bound:
 
-| **Gesture Type**  | **Description**                   |
-| ------------------- | -------------------------------- |
-| `press`           | Triggered when the element is pressed                   |
-| `release`         | Triggered when the element is released                   |
-| `click`           | Triggered when the element is clicked                   |
-| `doubleclick`     | Triggered on double, quadruple, etc. even number of clicks |
-| `longtouch`       | Triggered on long press                   |
-| `dragstart`       | Triggered when single-finger drag starts               |
-| `dragend`         | Triggered when single-finger drag ends               |
-| `dragmove`        | Triggered during single-finger drag               |
-| `doubeldragstart` | Triggered when double-finger drag starts               |
-| `doubeldragend`   | Triggered when double-finger drag ends               |
-| `doubeldragmove`  | Triggered during double-finger drag               |
-| `swipeup`         | Triggered on fast upward swipe                 |
-| `swipedown`       | Triggered on fast downward swipe                 |
-| `swipeleft`       | Triggered on fast leftward swipe                 |
-| `swiperight`      | Triggered on fast rightward swipe                 |
-| `pinchstart`      | Triggered when pinch gesture starts               |
-| `pinchin`         | Triggered on pinch in                   |
-| `pinchout`        | Triggered on pinch out                   |
-| `rotatestart`     | Triggered when rotate gesture starts               |
-| `rotatemove`      | Triggered during rotation                   |
-| `rotateend`       | Triggered when rotate gesture ends               |
+| **Gesture Type** | **Description**                                      |
+| ---------------------- | ---------------------------------------------------------- |
+| `press`              | Triggered when the element is pressed                      |
+| `release`            | Triggered when the element is released                     |
+| `click`              | Triggered when the element is clicked                      |
+| `doubleclick`        | Triggered on double, quadruple, etc. even number of clicks |
+| `longtouch`          | Triggered on long press                                    |
+| `dragstart`          | Triggered when single-finger drag starts                   |
+| `dragend`            | Triggered when single-finger drag ends                     |
+| `dragmove`           | Triggered during single-finger drag                        |
+| `doubeldragstart`    | Triggered when double-finger drag starts                   |
+| `doubeldragend`      | Triggered when double-finger drag ends                     |
+| `doubeldragmove`     | Triggered during double-finger drag                        |
+| `swipeup`            | Triggered on fast upward swipe                             |
+| `swipedown`          | Triggered on fast downward swipe                           |
+| `swipeleft`          | Triggered on fast leftward swipe                           |
+| `swiperight`         | Triggered on fast rightward swipe                          |
+| `pinchstart`         | Triggered when pinch gesture starts                        |
+| `pinchin`            | Triggered on pinch in                                      |
+| `pinchout`           | Triggered on pinch out                                     |
+| `rotatestart`        | Triggered when rotate gesture starts                       |
+| `rotatemove`         | Triggered during rotation                                  |
+| `rotateend`          | Triggered when rotate gesture ends                         |
 
 ## Usage
 
@@ -77,19 +79,19 @@ RbGestureEvent.cancelEventListener(yourElement, 'click', funcClick);
 
 The event handler receives an `RbEventState` object, which contains the following information:
 
-| **Property**      | **Type**               | **Description**         |
-| ------------------- | ---------------------------- | ---------------------- |
-| `eventType`       | `String`                   | Current event type           |
-| `scale`           | `Number`                   | Current scale ratio           |
-| `deltaAngle`      | `Number`                   | Change in angle relative to the initial angle     |
-| `midPoint`        | `Array<Number>`            | Midpoint coordinates of two fingers         |
-| `midDisplacement` | `Array<Number>`            | Displacement of the midpoint of two fingers         |
-| `clickCount`      | `Number`                   | Current click count           |
-| `isRotate`        | `Boolean`                  | Whether it is rotating           |
-| `isPinch`         | `Boolean`                  | Whether it is pinching           |
-| `pointers`        | `Map<Number, PointerInfo>` | All pointer information           |
+| **Property**  | **Type**               | **Description**                         |
+| ------------------- | ---------------------------- | --------------------------------------------- |
+| `eventType`       | `String`                   | Current event type                            |
+| `scale`           | `Number`                   | Current scale ratio                           |
+| `deltaAngle`      | `Number`                   | Change in angle relative to the initial angle |
+| `midPoint`        | `Array<Number>`            | Midpoint coordinates of two fingers           |
+| `midDisplacement` | `Array<Number>`            | Displacement of the midpoint of two fingers   |
+| `clickCount`      | `Number`                   | Current click count                           |
+| `isRotate`        | `Boolean`                  | Whether it is rotating                        |
+| `isPinch`         | `Boolean`                  | Whether it is pinching                        |
+| `pointers`        | `Map<Number, PointerInfo>` | All pointer information                       |
 | `triggerPointer`  | `PointerInfo`              | Pointer information that triggered this event |
-| `originEvent`     | `PointerEvent`             | Original pointer event object       |
+| `originEvent`     | `PointerEvent`             | Original pointer event object                 |
 
 > `RbEventState.pointers` is a Map structure that stores the id of each pointer and the corresponding `PointerInfo` object
 
@@ -97,12 +99,12 @@ The event handler receives an `RbEventState` object, which contains the followin
 
 The project uses `PointerInfo` to store pointer parameters, which contain the following information:
 
-| **Property**   | **Type**    | **Description**   |
-| ---------------- | ----------------- | ---------------- |
-| `move`         | `Boolean`       | Whether the pointer has moved |
-| `velocity`     | `Array<Number>` | Current movement speed of the pointer |
-| `displacement` | `Array<Number>` | Pointer displacement         |
-| `location`     | `Array<Number>` | Pointer location         |
+| **Property** | **Type**    | **Description**                 |
+| ------------------ | ----------------- | ------------------------------------- |
+| `move`           | `Boolean`       | Whether the pointer has moved         |
+| `velocity`       | `Array<Number>` | Current movement speed of the pointer |
+| `displacement`   | `Array<Number>` | Pointer displacement                  |
+| `location`       | `Array<Number>` | Pointer location                      |
 
 ### Debugging Assistance
 
