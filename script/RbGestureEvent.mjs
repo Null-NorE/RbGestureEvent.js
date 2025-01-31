@@ -2,12 +2,12 @@
 /**
  * @author Nor.E & Null -
  * @description RbGestureEvent.js
- * @version 1.0.2
+ * @version 1.1.0
  * @license MIT
  * @repository Null-NorE/RbGestureEvent
  */
 // 版本号，用于调试
-const version = '1.0.2';
+const version = '1.1.0';
 
 /** 
  * @name debug 
@@ -241,10 +241,10 @@ const eventConditions = {
       if (tri == 'up') {
          const [disX, disY] = ev.triggerPointer.displacement;
          const isSinglePointer = lev.maxPoint == 1;
-         const isLeftEnough = disX < -GestureEvent.config.threshold;
+         const isLeftEnough = disX < -Data.config.threshold;
          const isLeftMost = disX < 0 && Math.abs(disX) > Math.abs(disY);
          const isMove = ev.triggerPointer.move;
-         const velocityEnough = ev.triggerPointer.velocity[0] < -GestureEvent.config.swipeVelocityThreshold;
+         const velocityEnough = ev.triggerPointer.velocity[0] < -Data.config.swipeVelocityThreshold;
          return isSinglePointer && isMove && isLeftMost && isLeftEnough && velocityEnough;
       } else return false;
    },
@@ -252,10 +252,10 @@ const eventConditions = {
       if (tri == 'up') {
          const [disX, disY] = ev.triggerPointer.displacement;
          const isSinglePointer = lev.maxPoint == 1;
-         const isRightEnough = disX > GestureEvent.config.threshold;
+         const isRightEnough = disX > Data.config.threshold;
          const isRightMost = disX > 0 && Math.abs(disX) > Math.abs(disY);
          const isMove = ev.triggerPointer.move;
-         const velocityEnough = ev.triggerPointer.velocity[0] > GestureEvent.config.swipeVelocityThreshold;
+         const velocityEnough = ev.triggerPointer.velocity[0] > Data.config.swipeVelocityThreshold;
          return isSinglePointer && isMove && isRightMost && isRightEnough && velocityEnough;
       } else return false;
    },
@@ -263,10 +263,10 @@ const eventConditions = {
       if (tri == 'up') {
          const [disX, disY] = ev.triggerPointer.displacement;
          const isSinglePointer = lev.maxPoint == 1;
-         const isUpEnough = disY < -GestureEvent.config.threshold;
+         const isUpEnough = disY < -Data.config.threshold;
          const isUpMost = disY < 0 && Math.abs(disY) > Math.abs(disX);
          const isMove = ev.triggerPointer.move;
-         const velocityEnough = ev.triggerPointer.velocity[1] < -GestureEvent.config.swipeVelocityThreshold;
+         const velocityEnough = ev.triggerPointer.velocity[1] < -Data.config.swipeVelocityThreshold;
          return isSinglePointer && isMove && isUpMost && isUpEnough && velocityEnough;
       } else return false;
    },
@@ -274,10 +274,10 @@ const eventConditions = {
       if (tri == 'up') {
          const [disX, disY] = ev.triggerPointer.displacement;
          const isSinglePointer = lev.maxPoint == 1;
-         const isDownEnough = disY > GestureEvent.config.threshold;
+         const isDownEnough = disY > Data.config.threshold;
          const isDownMost = disY > 0 && Math.abs(disY) > Math.abs(disX);
          const isMove = ev.triggerPointer.move;
-         const velocityEnough = ev.triggerPointer.velocity[1] > GestureEvent.config.swipeVelocityThreshold;
+         const velocityEnough = ev.triggerPointer.velocity[1] > Data.config.swipeVelocityThreshold;
          return isSinglePointer && isMove && isDownMost && isDownEnough && velocityEnough;
       } else return false;
    },
@@ -361,14 +361,15 @@ const eventConditions = {
 };
 
 /**
- * @name RbGestureEvent
- * @description 手势事件类
+ * @description 手势事件数据类
  * @class
- * @member {RbEventState} eventState 事件状态
- * @member {RbEventState} lastEventState 上一次事件状态
- * @member {RbEventState} outEventState 输出事件状态
+ * @member {EventState} eventState 事件状态
+ * @member {EventState} lastEventState 上一次事件状态
+ * @member {EventState} outEventState 输出事件状态
+ * @member {Record<String, Function>} condition 事件触发条件
+ * @member {Record<String, Number>} config 配置
  */
-class GestureEvent {
+class Data {
    /**
     * @description 事件状态
     * @type {EventState}
@@ -410,65 +411,23 @@ class GestureEvent {
       angleThreshold: 5, // 旋转识别需要的最小角度
       scaleThreshold: 0.05, // 缩放识别需要的最小比例
    }
+}
 
-   /**
-    * @name 构造函数
-    * @constructor
-    * @returns {GestureEvent} - 返回一个RbGestureEvent实例
-    * @description 构造函数
-    */
-   constructor() {
-      // 监听触摸相关事件
-      document.addEventListener('DOMContentLoaded', () => {
-         [
-            ['pointerdown', GestureEvent.pointerdown],
-            ['pointermove', GestureEvent.pointermove],
-            ['pointerup', GestureEvent.pointerup],
-            ['pointercancel', GestureEvent.pointerCancel],
-         ].forEach(n => window.addEventListener(n[0], n[1], true));
-      });
-   }
-
-   /**
-    * @description 设置调试模式
-    * @param {Boolean} _debug - 是否开启调试模式
-    */
-   static setDebug(_debug) {
-      debug = _debug;
-      if (debug) console.log(
-         `%cRbGestureEvent - debug mode on, version: ${version}`,
-         `
-         color: white;
-         background-color: #333333; 
-         font-weight: bold;
-         text-shadow: 0 0 5px white;
-         padding: 0.5em;
-         border-left: 5px solid #ff0000;
-         border-right: 5px solid #ff0000;
-         `
-      );
-   }
-
-   /**
-    * @description 修改配置
-    * @param {Record<String, Number>} _config 
-    */
-   static setConfig(_config) {
-      Object.assign(GestureEvent.config, _config);
-   }
-
+/**
+ * @description 手势事件私有方法类
+ * @class
+ */
+class Private {
    /**
     * @description 处理originEvent并克隆状态
     * @param {Object} targetState - 目标状态对象
     */
    static cloneStateTo(targetState) {
-      const event = GestureEvent.eventState.originEvent;
-      GestureEvent.eventState.originEvent = null;
-
-      GestureEvent[targetState] = structuredClone(GestureEvent.eventState);
-      GestureEvent[targetState].originEvent = event;
-
-      GestureEvent.eventState.originEvent = event;
+      const event = Data.eventState.originEvent;
+      Data.eventState.originEvent = null;
+      Data[targetState] = structuredClone(Data.eventState);
+      Data[targetState].originEvent = event;
+      Data.eventState.originEvent = event;
    }
 
    /**
@@ -476,7 +435,7 @@ class GestureEvent {
     */
    static copyStateToLast() {
       this.cloneStateTo('lastEventState');
-      GestureEvent.lastEventState.time = Date.now();
+      Data.lastEventState.time = Date.now();
    }
 
    /**
@@ -512,9 +471,9 @@ class GestureEvent {
          .slice(0, 2)
          .map(p => [p.location[0], p.location[1]]);
 
-      eventState.startLength = GestureEvent.eDistance(...twoPointerLocation);
-      eventState.startAngle = GestureEvent.refAngle(...twoPointerLocation);
-      eventState.midPoint = GestureEvent.midPoint(...twoPointerLocation);
+      eventState.startLength = Private.eDistance(...twoPointerLocation);
+      eventState.startAngle = Private.refAngle(...twoPointerLocation);
+      eventState.midPoint = Private.midPoint(...twoPointerLocation);
    }
 
    /**
@@ -529,13 +488,13 @@ class GestureEvent {
       const { location: l1, displacement: d1 } = p1;
       const { location: l2, displacement: d2 } = p2;
 
-      const nowLength = GestureEvent.eDistance(l1, l2);
-      const nowAngle = GestureEvent.refAngle(l1, l2);
+      const nowLength = Private.eDistance(l1, l2);
+      const nowAngle = Private.refAngle(l1, l2);
 
       eventState.scale = nowLength / eventState.startLength;
       eventState.deltaAngle = nowAngle - eventState.startAngle;
-      eventState.midPoint = GestureEvent.midPoint(l1, l2);
-      eventState.midDisplacement = GestureEvent.midPoint(d1, d2);
+      eventState.midPoint = Private.midPoint(l1, l2);
+      eventState.midDisplacement = Private.midPoint(d1, d2);
    }
 
    /**
@@ -564,10 +523,10 @@ class GestureEvent {
     * @param {PointerEvent} event 
     */
    static pointerdown = event => {
-      GestureEvent.copyStateToLast();
-      const eventState = GestureEvent.eventState;
+      Private.copyStateToLast();
+      const eventState = Data.eventState;
 
-      GestureEvent.updateEventState(event, eventState, 'down');
+      Private.updateEventState(event, eventState, 'down');
 
       // 初始化新的指针数据
       const id = event.pointerId;
@@ -590,10 +549,10 @@ class GestureEvent {
       }
 
       if (eventState.pointerCount == 2) {
-         GestureEvent.initializeTwoPointerState(eventState);
+         Private.initializeTwoPointerState(eventState);
       }
 
-      GestureEvent.copyState();
+      Private.copyState();
    }
 
    /**
@@ -601,9 +560,9 @@ class GestureEvent {
     * @param {PointerEvent} event
     */
    static pointermove = event => {
-      GestureEvent.copyStateToLast();
-      const eventState = GestureEvent.eventState;
-      const lastState = GestureEvent.lastEventState;
+      Private.copyStateToLast();
+      const eventState = Data.eventState;
+      const lastState = Data.lastEventState;
 
       if (eventState.pointerCount < 1) return;
 
@@ -613,8 +572,8 @@ class GestureEvent {
          event.clientX - pointer.startLocation[0],
          event.clientY - pointer.startLocation[1]
       ];
-      if (Math.hypot(...displacement) > GestureEvent.config.threshold) {
-         GestureEvent.updateEventState(event, eventState, 'move'); // 因为triggerPointer是引用类型，所以即使还没更新指针数据，triggerPointer也会随着eventState.pointers更新
+      if (Math.hypot(...displacement) > Data.config.threshold) {
+         Private.updateEventState(event, eventState, 'move'); // 因为triggerPointer是引用类型，所以即使还没更新指针数据，triggerPointer也会随着eventState.pointers更新
 
          // 更新指针状态
          pointer.firstMove = !pointer.move;
@@ -622,17 +581,17 @@ class GestureEvent {
          pointer.location = [event.clientX, event.clientY];
          pointer.displacement = displacement;
 
-         GestureEvent.updateVelocity(pointer, lastState, id);
+         Private.updateVelocity(pointer, lastState, id);
 
          if (eventState.pointerCount >= 2) {
-            GestureEvent.updateTwoPointerState(eventState);
+            Private.updateTwoPointerState(eventState);
          }
          eventState.firstRotate = !eventState.isRotate;
-         eventState.isRotate = Math.abs(eventState.deltaAngle) >= GestureEvent.config.angleThreshold || eventState.isRotate;
+         eventState.isRotate = Math.abs(eventState.deltaAngle) >= Data.config.angleThreshold || eventState.isRotate;
          eventState.firstPinch = !eventState.isPinch;
-         eventState.isPinch = Math.abs(1 - eventState.scale) >= GestureEvent.config.scaleThreshold || eventState.isPinch;
+         eventState.isPinch = Math.abs(1 - eventState.scale) >= Data.config.scaleThreshold || eventState.isPinch;
 
-         GestureEvent.copyState();
+         Private.copyState();
       }
    }
 
@@ -641,10 +600,10 @@ class GestureEvent {
     * @param {PointerEvent} event
     */
    static pointerup = event => {
-      GestureEvent.copyStateToLast();
-      const eventState = GestureEvent.eventState;
+      Private.copyStateToLast();
+      const eventState = Data.eventState;
 
-      GestureEvent.updateEventState(event, eventState, 'up');
+      Private.updateEventState(event, eventState, 'up');
 
       eventState.pointers.delete(event.pointerId);
       eventState.pointerCount--;
@@ -653,7 +612,7 @@ class GestureEvent {
          && eventState.startTime - eventState.time < 500
          && !eventState.triggerPointer.move) {
          // 判定是否是连续点击事件
-         if (GestureEvent.eDistance(eventState.triggerPointer.location, eventState.lastClickLocation) < 20
+         if (Private.eDistance(eventState.triggerPointer.location, eventState.lastClickLocation) < 20
             && Date.now() - eventState.lastClickTime < 500) {
             eventState.clickCount++;
          } else {
@@ -677,7 +636,7 @@ class GestureEvent {
          eventState.maxPoint = 0;
       }
 
-      GestureEvent.copyState();
+      Private.copyState();
    }
 
    /**
@@ -685,10 +644,10 @@ class GestureEvent {
     * @param {PointerEvent} event 
     */
    static pointerCancel = event => {
-      GestureEvent.copyStateToLast();
-      const eventState = GestureEvent.eventState;
+      Private.copyStateToLast();
+      const eventState = Data.eventState;
 
-      GestureEvent.updateEventState(event, eventState, 'cancel');
+      Private.updateEventState(event, eventState, 'cancel');
 
       eventState.pointers.delete(event.pointerId);
       eventState.pointerCount--;
@@ -704,15 +663,146 @@ class GestureEvent {
          eventState.maxPoint = 0;
       }
 
-      GestureEvent.copyState();
+      Private.copyState();
    }
 
    /**
-    * 注册事件
+    * @description 事件调度器
+    * @param {HTMLElement} element - 元素
+    * @param {String} trigger - 触发器
+    */
+   static dispatchEvent(element, trigger) {
+      for (const type of Object.keys(element[EVENTLIST])) {
+         if (eventConditions[type](Data.eventState, Data.lastEventState, trigger)) {
+            element[EVENTLIST][type].forEach(callback => callback(Data.outEventState));
+         }
+      }
+   }
+
+   /**
+    * @name downdispatch
+    * @description 按下事件调度器
+    * @param {PointerEvent} event - 事件 
+    */
+   static downDispatch() {
+      Private.dispatchEvent(this, 'down');
+      if (Data.eventState.pointerCount == 1)
+         this[LONGTOUCH] = setTimeout(() => {
+            Private.longtouchDispatch(this);
+         }, Data.config.longtouchThreshold);
+      else if (this[LONGTOUCH])
+         clearTimeout(this[LONGTOUCH]);
+   }
+
+   static longtouchDispatch(element) {
+      Private.dispatchEvent(element, 'longtouch');
+   }
+
+   static moveDispatch() {
+      if (Data.eventState.pointerCount >= 1)
+         Private.dispatchEvent(this, 'move');
+   }
+
+   static upDispatch() {
+      Private.dispatchEvent(this, 'up');
+      clearTimeout(this[LONGTOUCH]);
+   }
+
+   static outDispatch() {
+      clearTimeout(this[LONGTOUCH]);
+   }
+
+   static cancelDispatch() {
+      Private.dispatchEvent(this, 'cancel');
+      clearTimeout(this[LONGTOUCH]);
+   }
+
+   /**
+    * @description 计算两点间距离
+    * @param {Array} param0 第一个点的坐标
+    * @param {Array} param1 第二个点的坐标
+    * @returns {Number} - 两点间距离
+    */
+   static eDistance = ([x1, y1], [x2, y2]) => {
+      const [dx, dy] = [x1 - x2, y1 - y2];
+      return Math.hypot(dx, dy);
+   }
+
+   /**
+    * @description 计算参考角(两点连线与垂直方向间夹角)
+    * @param {Array} param0 第一个点的坐标
+    * @param {Array} param1 第二个点的坐标
+    * @returns {Number} - 两点连线与垂直方向间夹角
+    */
+   static refAngle = ([x1, y1], [x2, y2]) => {
+      const [dx, dy] = [x1 - x2, y1 - y2];
+      return Math.atan2(dy, dx) / Math.PI * 180;
+   }
+
+   /**
+    * @description 计算两点连线的中点
+    * @param {Array} param0 第一个点的坐标
+    * @param {Array} param1 第二个点的坐标
+    * @returns {Array} - 两点连线的中点坐标
+    */
+   static midPoint = ([x1, y1], [x2, y2]) => [(x1 + x2) / 2, (y1 + y2) / 2];
+}
+
+/**
+ * @description 手势事件公开接口类
+ * @class
+ */
+class Public {
+   /**
+    * @description 构造函数
+    * @constructor
+    * @returns {Public} - 返回一个RbGestureEvent实例
+    */
+   constructor() {
+      document.addEventListener('DOMContentLoaded', () => {
+         [
+            ['pointerdown', Private.pointerdown],
+            ['pointermove', Private.pointermove],
+            ['pointerup', Private.pointerup],
+            ['pointercancel', Private.pointerCancel],
+         ].forEach(n => window.addEventListener(n[0], n[1], true));
+      });
+   }
+
+   /**
+    * @description 设置调试模式
+    * @param {Boolean} _debug - 是否开启调试模式
+    */
+   static setDebug(_debug) {
+      debug = _debug;
+      if (debug) console.log(
+         `%cRbGestureEvent - debug mode on, version: ${version}`,
+         `
+            color: white;
+            background-color: #333333; 
+            font-weight: bold;
+            text-shadow: 0 0 5px white;
+            padding: 0.5em;
+            border-left: 5px solid #ff0000;
+            border-right: 5px solid #ff0000;
+            `
+      );
+   }
+
+   /**
+    * @description 修改配置
+    * @param {Record<String, Number>} _config 
+    */
+   static setConfig(_config) {
+      Object.assign(Data.config, _config);
+   }
+
+   /**
+    * @description 注册事件监听器
     * @param {HTMLElement} element 元素
     * @param {String} type 事件类型
     * @param {(eventState: EventState) => void} callback 回调函数
-    * @returns {void} - 无返回值
+    * @returns {void}
     */
    static registerEventListener(element, type, callback) {
       if (eventConditions[type] == undefined) {
@@ -722,11 +812,11 @@ class GestureEvent {
       // 如果元素没有事件列表，添加事件监听器，否则直接添加事件
       if (!element[EVENTLIST]) {
          element[EVENTLIST] = {};
-         element.addEventListener('pointerdown', GestureEvent.downDispatch);
-         element.addEventListener('pointermove', GestureEvent.moveDispatch);
-         element.addEventListener('pointerup', GestureEvent.upDispatch);
-         element.addEventListener('pointerout', GestureEvent.outDispatch);
-         element.addEventListener('pointercancel', GestureEvent.cancelDispatch);
+         element.addEventListener('pointerdown', Private.downDispatch);
+         element.addEventListener('pointermove', Private.moveDispatch);
+         element.addEventListener('pointerup', Private.upDispatch);
+         element.addEventListener('pointerout', Private.outDispatch);
+         element.addEventListener('pointercancel', Private.cancelDispatch);
       }
       if (!element[EVENTLIST][type]) {
          element[EVENTLIST][type] = [];
@@ -737,7 +827,7 @@ class GestureEvent {
       if (callback.name != '') {
          // 将未修饰回调函数和修饰后的回调函数的对应关系保存起来
          if (!element[CALLBACKMAP]) {
-            element[CALLBACKMAP] = new Map;
+            element[CALLBACKMAP] = new WeakMap;
             boundcallback = callback.bind(element);
             element[CALLBACKMAP].set(callback, {
                boundcallback: boundcallback,
@@ -760,11 +850,11 @@ class GestureEvent {
    }
 
    /**
-    * 注销事件
+    * @description 注销事件监听器
     * @param {HTMLElement} element 元素
     * @param {String} type 事件类型
     * @param {Function} callback 回调函数
-    * @returns {void} - 无返回值
+    * @returns {void}
     */
    static cancelEventListener(element, type, callback) {
       if (debug) console.log(`cancel event: ${type} on`, element);
@@ -785,11 +875,11 @@ class GestureEvent {
 
             if (Object.keys(element[EVENTLIST]).length == 0) {
                delete element[EVENTLIST];
-               element.removeEventListener('pointerdown', GestureEvent.downDispatch);
-               element.removeEventListener('pointermove', GestureEvent.moveDispatch);
-               element.removeEventListener('pointerup', GestureEvent.upDispatch);
-               element.removeEventListener('pointerout', GestureEvent.outDispatch);
-               element.removeEventListener('pointercancel', GestureEvent.cancelDispatch);
+               element.removeEventListener('pointerdown', Private.downDispatch);
+               element.removeEventListener('pointermove', Private.moveDispatch);
+               element.removeEventListener('pointerup', Private.upDispatch);
+               element.removeEventListener('pointerout', Private.outDispatch);
+               element.removeEventListener('pointercancel', Private.cancelDispatch);
             }
          }
 
@@ -823,90 +913,12 @@ class GestureEvent {
          throw new Error(`event type ${type} not found`);
       }
    }
-
-   /**
-    * @name downdispatch
-    * @description 按下事件调度器
-    * @param {PointerEvent} event - 事件 
-    */
-   static downDispatch() {
-      GestureEvent.dispatchEvent(this, 'down');
-      if (GestureEvent.eventState.pointerCount == 1)
-         this[LONGTOUCH] = setTimeout(() => {
-            GestureEvent.longtouchDispatch(this);
-         }, GestureEvent.config.longtouchThreshold);
-      else if (this[LONGTOUCH])
-         clearTimeout(this[LONGTOUCH]);
-   }
-
-   static longtouchDispatch(element) {
-      GestureEvent.dispatchEvent(element, 'longtouch');
-   }
-
-   static moveDispatch() {
-      if (GestureEvent.eventState.pointerCount >= 1)
-         GestureEvent.dispatchEvent(this, 'move');
-   }
-
-   static upDispatch() {
-      GestureEvent.dispatchEvent(this, 'up');
-      clearTimeout(this[LONGTOUCH]);
-   }
-
-   static outDispatch() {
-      clearTimeout(this[LONGTOUCH]);
-   }
-
-   static cancelDispatch() {
-      GestureEvent.dispatchEvent(this, 'cancel');
-      clearTimeout(this[LONGTOUCH]);
-   }
-
-   /**
-    * @name dispatchEvent
-    * @description 筛选符合触发条件的事件并执行
-    * @param {HTMLElement} element - 元素
-    * @param {String} trigger - 触发器, 用于筛选符合触发条件的事件
-    */
-   static dispatchEvent(element, trigger) {
-      for (const type of Object.keys(element[EVENTLIST])) {
-         if (eventConditions[type](GestureEvent.eventState, GestureEvent.lastEventState, trigger)) {
-            element[EVENTLIST][type].forEach(callback => callback(GestureEvent.outEventState));
-         }
-      }
-   }
-
-   /**
-    * @name 计算两点间距离
-    * @param {Array} param0 第一个点的坐标
-    * @param {Array} param1 第二个点的坐标
-    * @returns {Number} - 两点间距离
-    */
-   static eDistance = ([x1, y1], [x2, y2]) => {
-      const [dx, dy] = [x1 - x2, y1 - y2];
-      return Math.hypot(dx, dy);
-   }
-
-   /**
-    * @name 计算参考角(两点连线与垂直方向间夹角)
-    * @param {Array} param0 第一个点的坐标
-    * @param {Array} param1 第二个点的坐标
-    * @returns {Number} - 两点连线与垂直方向间夹角
-    */
-   static refAngle = ([x1, y1], [x2, y2]) => {
-      const [dx, dy] = [x1 - x2, y1 - y2];
-      return Math.atan2(dy, dx) / Math.PI * 180;
-   }
-
-   /**
-    * @name 计算两点连线的中点
-    * @param {Array} param0 第一个点的坐标
-    * @param {Array} param1 第二个点的坐标
-    * @returns {Array} - 两点连线的中点坐标
-    */
-   static midPoint = ([x1, y1], [x2, y2]) => [(x1 + x2) / 2, (y1 + y2) / 2];
 }
 
-const _ = new GestureEvent;// 触发构造函数
+const _ = new Public(); // 触发构造函数
 
-export { GestureEvent as RbGestureEvent, EventState as RbEventState, PointerInfo as RbPointerInfo };
+export {
+   Public as RbGestureEvent,
+   EventState as RbEventState,
+   PointerInfo as RbPointerInfo
+};
