@@ -38,6 +38,8 @@
 | `rotatemove`      | 旋转过程中触发                   |
 | `rotateend`       | 旋转手势结束时触发               |
 
+> **请注意：若要阻止默认的longtouch事件，请在press事件处使用event.preventDefault()，而不是在longtouch事件处使用**
+
 ## 使用方法
 
 ### 引入库

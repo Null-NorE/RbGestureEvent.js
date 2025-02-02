@@ -40,6 +40,8 @@ The following are the gesture event types that can be bound:
 | `rotatemove`         | Triggered during rotation                                  |
 | `rotateend`          | Triggered when rotate gesture ends                         |
 
+> **IMPORTANT：If you want to prevent the default longtouch event, please call event.preventDefault() in the press event, not in the longtouch event.**
+
 ## Usage
 
 ### Import the Library
