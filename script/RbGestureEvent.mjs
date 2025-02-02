@@ -754,18 +754,25 @@ class Private {
  */
 class Public {
    /**
+    * @private
     * @description 初始化函数
     * @returns {void}
     */
-   static initialize() {
-      document.addEventListener('DOMContentLoaded', () => {
+   static _initialize() {
+      const initializePointerEvents = () => {
          [
             ['pointerdown', Private.pointerdown],
             ['pointermove', Private.pointermove],
             ['pointerup', Private.pointerup],
             ['pointercancel', Private.pointerCancel],
          ].forEach(n => window.addEventListener(n[0], n[1], true));
-      });
+      };
+      
+      if (document.readyState != 'complete') {
+         document.addEventListener('DOMContentLoaded', initializePointerEvents);
+      } else {
+         initializePointerEvents();
+      }
    }
 
    /**
@@ -914,7 +921,7 @@ class Public {
    }
 }
 
-Public.initialize(); // 执行初始化
+Public._initialize(); // 执行初始化
 
 export {
    Public as RbGestureEvent,
