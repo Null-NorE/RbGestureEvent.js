@@ -43,12 +43,12 @@ __webpack_require__.r(__webpack_exports__);
 /**
  * @author Nor.E & Null -
  * @description RbGestureEvent.js
- * @version 1.1.0
+ * @version 1.1.1
  * @license MIT
  * @repository Null-NorE/RbGestureEvent
  */
 // 版本号，用于调试
-const version = '1.1.0';
+const version = '1.1.1';
 
 /** 
  * @name debug 
@@ -720,43 +720,43 @@ class Private {
       }
    }
 
-      /**
+   /**
     * @name downdispatch
     * @description 按下事件调度器
     * @param {PointerEvent} event - 事件 
     */
-      static downDispatch() {
-         Private.dispatchEvent(this, 'down');
-         if (Data.eventState.pointerCount == 1)
-            this[LONGTOUCH] = setTimeout(() => {
-               Private.longtouchDispatch(this);
-            }, Data.config.longtouchThreshold);
-         else if (this[LONGTOUCH])
-            clearTimeout(this[LONGTOUCH]);
-      }
-   
-      static longtouchDispatch(element) {
-         Private.dispatchEvent(element, 'longtouch');
-      }
-   
-      static moveDispatch() {
-         if (Data.eventState.pointerCount >= 1)
-            Private.dispatchEvent(this, 'move');
-      }
-   
-      static upDispatch() {
-         Private.dispatchEvent(this, 'up');
+   static downDispatch() {
+      Private.dispatchEvent(this, 'down');
+      if (Data.eventState.pointerCount == 1)
+         this[LONGTOUCH] = setTimeout(() => {
+            Private.longtouchDispatch(this);
+         }, Data.config.longtouchThreshold);
+      else if (this[LONGTOUCH])
          clearTimeout(this[LONGTOUCH]);
-      }
-   
-      static outDispatch() {
-         clearTimeout(this[LONGTOUCH]);
-      }
-   
-      static cancelDispatch() {
-         Private.dispatchEvent(this, 'cancel');
-         clearTimeout(this[LONGTOUCH]);
-      }
+   }
+
+   static longtouchDispatch(element) {
+      Private.dispatchEvent(element, 'longtouch');
+   }
+
+   static moveDispatch() {
+      if (Data.eventState.pointerCount >= 1)
+         Private.dispatchEvent(this, 'move');
+   }
+
+   static upDispatch() {
+      Private.dispatchEvent(this, 'up');
+      clearTimeout(this[LONGTOUCH]);
+   }
+
+   static outDispatch() {
+      clearTimeout(this[LONGTOUCH]);
+   }
+
+   static cancelDispatch() {
+      Private.dispatchEvent(this, 'cancel');
+      clearTimeout(this[LONGTOUCH]);
+   }
 
    /**
     * @description 计算两点间距离
@@ -795,19 +795,25 @@ class Private {
  */
 class Public {
    /**
-    * @description 构造函数
-    * @constructor
-    * @returns {Public} - 返回一个RbGestureEvent实例
+    * @private
+    * @description 初始化函数
+    * @returns {void}
     */
-   constructor() {
-      document.addEventListener('DOMContentLoaded', () => {
+   static _initialize() {
+      const initializePointerEvents = () => {
          [
             ['pointerdown', Private.pointerdown],
             ['pointermove', Private.pointermove],
             ['pointerup', Private.pointerup],
             ['pointercancel', Private.pointerCancel],
          ].forEach(n => window.addEventListener(n[0], n[1], true));
-      });
+      };
+
+      if (document.readyState != 'interactive') {
+         document.addEventListener('DOMContentLoaded', initializePointerEvents);
+      } else {
+         initializePointerEvents();
+      }
    }
 
    /**
@@ -956,7 +962,7 @@ class Public {
    }
 }
 
-const _ = new Public(); // 触发构造函数
+Public._initialize(); // 执行初始化
 
 
 RbGestureEvent = __webpack_exports__;
