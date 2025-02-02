@@ -1,6 +1,6 @@
 # RbGestureEvent.js
 
-> 中文版本[README_CN](./README_CN.md "中文版")
+> 中文版本[README_CN](./README_CN.md "中文文档")
 
 A modern web gesture event library that supports advanced gestures such as long press, pinch, and rotate, mimicking the native event API for easy integration into web applications.
 
