@@ -767,8 +767,8 @@ class Public {
             ['pointercancel', Private.pointerCancel],
          ].forEach(n => window.addEventListener(n[0], n[1], true));
       };
-      
-      if (document.readyState != 'complete') {
+
+      if (document.readyState != 'interactive') {
          document.addEventListener('DOMContentLoaded', initializePointerEvents);
       } else {
          initializePointerEvents();
