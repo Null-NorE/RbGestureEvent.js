@@ -1,7 +1,7 @@
 {
   "name": "rb-gesture-event",
   "version": "1.1.0",
-  "description": "一个现代 Web 手势事件库，为长按、缩放、旋转等高级手势提供支持，模仿原生事件 API，便于集成到 Web 应用中。",
+  "description": "A modern web gesture event library that supports advanced gestures such as long press, pinch, and rotate, mimicking the native event API for easy integration into web applications.",
   "main": "./script/RbGestureEvent.js",
   "homepage": "https://null-nore.github.io/RbGestureEvent/",
   "private": true,
