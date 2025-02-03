@@ -173,8 +173,6 @@ RbGestureEvent.removeCondition('customEvent');
 
 本项目仅有一个mjs文件，直接复制进去就能用。
 
-## TODO
-
 ## 贡献
 
 - 欢迎通过 PR 和 Issue 提交反馈和改进建议。
