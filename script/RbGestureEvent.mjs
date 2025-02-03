@@ -22,14 +22,8 @@ const LONGTOUCH = Symbol.for('RBLongtouch');
 const CALLBACKMAP = Symbol.for('RBCallbackMap');
 
 /**
- * @typedef {
- * 'press' | 'release' | 'click' | 'doubleclick' | 'longtouch' 
- * | 'dragstart' | 'dragmove' | 'dragend' | 'dragcancel'| 'dragleft'| 'dragright'| 'dragup'| 'dragdown'
- * | 'pinchstart' | 'pinchmove' | 'pinchend' | 'pinchin'| 'pinchout'
- * | 'rotatestart' | 'rotatemove' | 'rotateend' | 'rotatecancel'
- * | 'doubledragstart'| 'doubledragmove'| 'doubledragend'| 'doubledragcancel'
- * | 'swipeleft'| 'swiperight'| 'swipeup'| 'swipedown'
- * } EventType
+ * @typedef {'press' | 'release' | 'click' | 'doubleclick' | 'longtouch' | 'dragstart' | 'dragmove' | 'dragend' | 'dragcancel'| 'dragleft'| 'dragright'| 'dragup'| 'dragdown'| 'pinchstart' | 'pinchmove' | 'pinchend' | 'pinchin'| 'pinchout'| 'rotatestart' | 'rotatemove' | 'rotateend' | 'rotatecancel'| 'doubledragstart'| 'doubledragmove'| 'doubledragend'| 'doubledragcancel'| 'swipeleft'| 'swiperight'| 'swipeup'| 'swipedown'} EventType
+ * @typedef {'down' | 'up' | 'longtouch' | 'cancel' | 'move'}TriggerType
  */
 
 /**
@@ -113,7 +107,7 @@ class EventState {
 /**
  * @name eventConditions
  * @description 事件条件对象，包含用于判断各种事件类型的条件函数
- * @type {Record<EventType, (ev: EventState, lev: EventState, tri: String) => Boolean>}
+ * @type {Record<EventType, (ev: EventState, lev: EventState, tri: TriggerType) => Boolean>}
  * @private
  * @constant
  */
@@ -410,7 +404,6 @@ class Data {
    /**
     * @description 配置
     * @type {Record<String, Number>}
-    * @private
     * @constant
     * @member {Number} threshold 识别需要的最小位移
     */
@@ -778,6 +771,11 @@ class Public {
             ['pointercancel', Private.pointerCancel],
          ].forEach(n => window.addEventListener(n[0], n[1], true));
       };
+
+      window.addEventListener('pointerdown', Private.pointerdown, true);
+      window.addEventListener('pointermove', Private.pointermove, true);
+      window.addEventListener('pointerup', Private.pointerup, true);
+      window.addEventListener('pointercancel', Private.pointerCancel, true);
 
       if (document.readyState != 'interactive') {
          document.addEventListener('DOMContentLoaded', initializePointerEvents);
