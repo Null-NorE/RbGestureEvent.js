@@ -1,7 +1,6 @@
 "use strict";
-import { RbGestureEvent, RbEventState } from 'PATH/TO/RbGestureEvent.mjs';
+import { RbGestureEvent } from 'PATH/TO/RbGestureEvent.mjs';
 // RbGestureEvent是主要的手势事件类
-// RbEventState是一个枚举类，用于vscode的智能补全，不加也行
 
 const yourElement = document.querySelector('your-element');
 

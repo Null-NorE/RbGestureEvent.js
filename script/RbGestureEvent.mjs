@@ -932,6 +932,4 @@ class Public {
 
 Public._initialize(); // 执行初始化
 
-export {
-   Public as RbGestureEvent
-};
+export { Public as RbGestureEvent };

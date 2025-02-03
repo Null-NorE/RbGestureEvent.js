@@ -45,9 +45,8 @@
 ### 引入库
 
 ```javascript
-import { RbGestureEvent, RbEventState } from 'PATH/TO/RbGestureEvent.mjs';
+import { RbGestureEvent } from 'PATH/TO/RbGestureEvent.mjs';
 // RbGestureEvent是主要的手势事件类
-// RbEventState是一个类，用于vscode的智能补全，不加也行
 
 const yourElement = document.querySelector('your-element');
 ```

@@ -47,9 +47,8 @@ The following are the gesture event types that can be bound:
 ### Import the Library
 
 ```javascript
-import { RbGestureEvent, RbEventState } from 'PATH/TO/RbGestureEvent.mjs';
+import { RbGestureEvent } from 'PATH/TO/RbGestureEvent.mjs';
 // RbGestureEvent is the main gesture event class
-// RbEventState is a class for VSCode's IntelliSense, optional
 
 const yourElement = document.querySelector('your-element');
 ```
