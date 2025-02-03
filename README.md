@@ -46,6 +46,10 @@ The following are the gesture event types that can be bound:
 
 ### Import the Library
 
+```sh
+$npm i rb-gesture-event
+```
+
 ```javascript
 import { RbGestureEvent } from 'PATH/TO/RbGestureEvent.mjs';
 // RbGestureEvent is the main gesture event class

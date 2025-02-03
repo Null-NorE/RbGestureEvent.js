@@ -44,6 +44,10 @@
 
 ### 引入库
 
+```sh
+$npm i rb-gesture-event
+```
+
 ```javascript
 import { RbGestureEvent } from 'PATH/TO/RbGestureEvent.mjs';
 // RbGestureEvent是主要的手势事件类

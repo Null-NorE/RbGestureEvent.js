@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./types",
+    "allowJs": true,
+    "target": "ES6"
+  },
+  "include": ["./script/RbGestureEvent.mjs"]
+}
