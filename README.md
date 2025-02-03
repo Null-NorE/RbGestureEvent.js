@@ -51,7 +51,7 @@ $npm i rb-gesture-event
 ```
 
 ```javascript
-import { RbGestureEvent } from 'PATH/TO/RbGestureEvent.mjs';
+import { RbGestureEvent } from "rb-gesture-event";
 // RbGestureEvent is the main gesture event class
 
 const yourElement = document.querySelector('your-element');

@@ -49,7 +49,7 @@ $npm i rb-gesture-event
 ```
 
 ```javascript
-import { RbGestureEvent } from 'PATH/TO/RbGestureEvent.mjs';
+import { RbGestureEvent } from "rb-gesture-event";
 // RbGestureEvent是主要的手势事件类
 
 const yourElement = document.querySelector('your-element');
