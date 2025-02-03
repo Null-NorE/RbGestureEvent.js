@@ -19,9 +19,11 @@
   "exports": {
     ".": {
       "import": "./script/RbGestureEvent.mjs",
-      "require": "./dist/RbGestureEvent.js"
+      "require": "./dist/RbGestureEvent.js",
+      "types": "./types/RbGestureEvent.d.mts"
     }
   },
+  "types": "./types/RbGestureEvent.d.mts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -32,5 +34,11 @@
     "javascript"
   ],
   "author": "Nor.E & Null -",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "eslint-scope": "^8.2.0"
+  }
 }

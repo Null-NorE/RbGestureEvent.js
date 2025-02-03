@@ -22,6 +22,17 @@ const LONGTOUCH = Symbol.for('RBLongtouch');
 const CALLBACKMAP = Symbol.for('RBCallbackMap');
 
 /**
+ * @typedef {
+ * 'press' | 'release' | 'click' | 'doubleclick' | 'longtouch' 
+ * | 'dragstart' | 'dragmove' | 'dragend' | 'dragcancel'| 'dragleft'| 'dragright'| 'dragup'| 'dragdown'
+ * | 'pinchstart' | 'pinchmove' | 'pinchend' | 'pinchin'| 'pinchout'
+ * | 'rotatestart' | 'rotatemove' | 'rotateend' | 'rotatecancel'
+ * | 'doubledragstart'| 'doubledragmove'| 'doubledragend'| 'doubledragcancel'
+ * | 'swipeleft'| 'swiperight'| 'swipeup'| 'swipedown'
+ * } EventType
+ */
+
+/**
  * @name PointerInfo
  * @description 指针信息类
  * @class
@@ -102,7 +113,7 @@ class EventState {
 /**
  * @name eventConditions
  * @description 事件条件对象，包含用于判断各种事件类型的条件函数
- * @type {Record<String, (ev: EventState, lev: EventState, tri: String) => Boolean>}
+ * @type {Record<EventType, (ev: EventState, lev: EventState, tri: String) => Boolean>}
  * @private
  * @constant
  */
@@ -806,7 +817,7 @@ class Public {
    /**
     * @description 注册事件监听器
     * @param {HTMLElement} element 元素
-    * @param {String} type 事件类型
+    * @param {EventType} type 事件类型
     * @param {(eventState: EventState) => void} callback 回调函数
     * @returns {void}
     */
@@ -858,7 +869,7 @@ class Public {
    /**
     * @description 注销事件监听器
     * @param {HTMLElement} element 元素
-    * @param {String} type 事件类型
+    * @param {EventType} type 事件类型
     * @param {Function} callback 回调函数
     * @returns {void}
     */
@@ -924,7 +935,5 @@ class Public {
 Public._initialize(); // 执行初始化
 
 export {
-   Public as RbGestureEvent,
-   EventState as RbEventState,
-   PointerInfo as RbPointerInfo
+   Public as RbGestureEvent
 };
