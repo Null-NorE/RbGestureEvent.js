@@ -2,19 +2,26 @@
   "name": "rb-gesture-event",
   "version": "1.1.0",
   "description": "A modern web gesture event library that supports advanced gestures such as long press, pinch, and rotate, mimicking the native event API for easy integration into web applications.",
-  "main": "./script/RbGestureEvent.js",
+  "main": "./script/RbGestureEvent.mjs",
   "homepage": "https://null-nore.github.io/RbGestureEvent/",
   "private": true,
   "directories": {
     "example": "example"
   },
   "files": [
-    "script/",
-    "dist/",
+    "./script/RbGestureEvent.mjs",
+    "./dist/RbGestureEvent.js",
+    "types/",
     "README_CN.md",
     "README.md",
     "LICENSE"
   ],
+  "exports": {
+    ".": {
+      "import": "./script/RbGestureEvent.mjs",
+      "require": "./dist/RbGestureEvent.js"
+    }
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -25,13 +32,5 @@
     "javascript"
   ],
   "author": "Nor.E & Null -",
-  "license": "MIT",
-  "devDependencies": {
-    "terser-webpack-plugin": "^5.3.10",
-    "webpack": "^5.96.1",
-    "webpack-cli": "^5.1.4"
-  },
-  "dependencies": {
-    "eslint-scope": "^5.1.1"
-  }
+  "license": "MIT"
 }
