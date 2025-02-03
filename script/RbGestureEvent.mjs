@@ -2,12 +2,12 @@
 /**
  * @author Nor.E & Null -
  * @description RbGestureEvent.js
- * @version 1.1.1
+ * @version 1.1.2
  * @license MIT
  * @repository Null-NorE/RbGestureEvent
  */
 // 版本号，用于调试
-const version = '1.1.1';
+const version = '1.1.2';
 
 /** 
  * @name debug 
