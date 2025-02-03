@@ -175,10 +175,6 @@ RbGestureEvent.removeCondition('customEvent');
 
 This project only has one mjs file, just copy it in and use it.
 
-## TODO
-
-None
-
 ## Contribution
 
 - Feedback and improvement suggestions are welcome through PR and Issue.
