@@ -45,7 +45,7 @@
 ### 引入库
 
 ```sh
-$npm i rb-gesture-event
+$ npm i rb-gesture-event --save
 ```
 
 ```javascript

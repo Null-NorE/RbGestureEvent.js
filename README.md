@@ -47,8 +47,9 @@ The following are the gesture event types that can be bound:
 ### Import the Library
 
 ```sh
-$npm i rb-gesture-event
+$ npm i rb-gesture-event --save
 ```
+
 
 ```javascript
 import { RbGestureEvent } from "rb-gesture-event";
