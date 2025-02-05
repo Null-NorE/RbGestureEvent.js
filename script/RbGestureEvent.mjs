@@ -112,11 +112,11 @@ class EventState {
  * @constant
  */
 const eventConditions = {
-   'press': (ev, lev, tri) => {
+   'press': (ev, _, tri) => {
       const isDown = ev.eventType == 'down' && tri == 'down';
       return isDown;
    },
-   'release': (ev, lev, tri) => {
+   'release': (ev, _, tri) => {
       const isUp = ev.eventType == 'up' && tri == 'up';
       return isUp;
    },
@@ -130,7 +130,7 @@ const eventConditions = {
          return ev.clickCount % 2 == 0 && ev.clickCount > 0;
       } else return false;
    },
-   'longtouch': (ev, lev, tri) => {
+   'longtouch': (ev, _, tri) => {
       if (tri == 'longtouch') {
          const isDelayEnough = Date.now() - ev.startTime >= 500;
          const isSinglePointer = ev.maxPoint == 1;
@@ -150,7 +150,7 @@ const eventConditions = {
          return isSinglePointer && (isFirstMove || !isSinglePointerLast) && isMove;
       } else return false;
    },
-   'dragmove': (ev, lev, tri) => {
+   'dragmove': (ev, _, tri) => {
       if (tri == 'move') {
          // 判断当前是否是单指操作，是否不是第一次移动触发，是否移动了
          const isSinglePointer = ev.pointerCount == 1;
@@ -289,7 +289,7 @@ const eventConditions = {
 
 
    /* pinchEvent */
-   'pinchstart': (ev, lev, tri) => {
+   'pinchstart': (ev, _, tri) => {
       if (tri == 'move') {
          // 是否是第一次触发，两指间距是否改变了
          const isPinch = ev.isPinch;
@@ -297,7 +297,7 @@ const eventConditions = {
          return isPinch && firstPinch;
       } else return false;
    },
-   'pinchmove': (ev, lev, tri) => {
+   'pinchmove': (ev, _, tri) => {
       if (tri == 'move') {
          // 是否不是第一次触发，两指间距是否改变了
          const isPinch = ev.isPinch;
@@ -333,7 +333,7 @@ const eventConditions = {
    },
 
    /* rotateEvent */
-   'rotatestart': (ev, lev, tri) => {
+   'rotatestart': (ev, _, tri) => {
       if (tri == 'move') {
          // 是否是第一次触发，两指角度是否改变了
          const isRotate = ev.isRotate;
@@ -341,7 +341,7 @@ const eventConditions = {
          return isRotate && firstRotate;
       } else return false;
    },
-   'rotatemove': (ev, lev, tri) => {
+   'rotatemove': (ev, _, tri) => {
       if (tri == 'move') {
          // 是否不是第一次触发，两指角度是否改变了
          const isRotate = ev.isRotate;
