@@ -777,10 +777,10 @@ class Public {
       window.addEventListener('pointerup', Private.pointerup, true);
       window.addEventListener('pointercancel', Private.pointerCancel, true);
 
-      if (document.readyState != 'interactive') {
-         document.addEventListener('DOMContentLoaded', initializePointerEvents);
-      } else {
+      if (document.readyState == 'loading') {
          initializePointerEvents();
+      } else {
+         document.addEventListener('DOMContentLoaded', initializePointerEvents);
       }
    }
 
