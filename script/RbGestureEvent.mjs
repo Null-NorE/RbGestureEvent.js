@@ -772,11 +772,6 @@ class Public {
          ].forEach(n => window.addEventListener(n[0], n[1], true));
       };
 
-      window.addEventListener('pointerdown', Private.pointerdown, true);
-      window.addEventListener('pointermove', Private.pointermove, true);
-      window.addEventListener('pointerup', Private.pointerup, true);
-      window.addEventListener('pointercancel', Private.pointerCancel, true);
-
       if (document.readyState == 'loading') {
          initializePointerEvents();
       } else {
