@@ -22,8 +22,8 @@ const LONGTOUCH = Symbol.for('RBLongtouch');
 const CALLBACKMAP = Symbol.for('RBCallbackMap');
 
 /**
- * @typedef {'press' | 'release' | 'click' | 'doubleclick' | 'longtouch' | 'dragstart' | 'dragmove' | 'dragend' | 'dragcancel'| 'dragleft'| 'dragright'| 'dragup'| 'dragdown'| 'pinchstart' | 'pinchmove' | 'pinchend' | 'pinchin'| 'pinchout'| 'rotatestart' | 'rotatemove' | 'rotateend' | 'rotatecancel'| 'doubledragstart'| 'doubledragmove'| 'doubledragend'| 'doubledragcancel'| 'swipeleft'| 'swiperight'| 'swipeup'| 'swipedown'} EventType
- * @typedef {'down' | 'up' | 'longtouch' | 'cancel' | 'move'}TriggerType
+ * @typedef {('press'|'release'|'click'|'doubleclick'|'longtouch'|'dragstart'|'dragmove'|'dragend'|'dragcancel'|'dragleft'|'dragright'|'dragup'|'dragdown'|'pinchstart'|'pinchmove'|'pinchend'|'pinchin'|'pinchout'|'rotatestart'|'rotatemove'|'rotateend'|'rotatecancel'|'doubledragstart'|'doubledragmove'|'doubledragend'|'doubledragcancel'|'swipeleft'|'swiperight'|'swipeup'|'swipedown')} EventType
+ * @typedef {('down'|'up'|'longtouch'|'cancel'|'move')} TriggerType
  */
 
 /**
@@ -105,9 +105,8 @@ class EventState {
 }
 
 /**
- * @name eventConditions
  * @description 事件条件对象，包含用于判断各种事件类型的条件函数
- * @type {Record<EventType, (ev: EventState, lev: EventState, tri: TriggerType) => Boolean>}
+ * @type {Record<EventType, (ev: EventState, lev: EventState, tri: TriggerType) => boolean>}
  * @private
  * @constant
  */
@@ -371,8 +370,15 @@ const eventConditions = {
  * @member {EventState} eventState 事件状态
  * @member {EventState} lastEventState 上一次事件状态
  * @member {EventState} outEventState 输出事件状态
- * @member {Record<String, Function>} condition 事件触发条件
- * @member {Record<String, Number>} config 配置
+ * @member {Record<EventType, (ev: EventState, lev: EventState, tri: TriggerType) => boolean>} condition 事件触发条件
+ * @member {{
+ *   threshold: number,
+ *   swipeVelocityThreshold: number,
+ *   clickThreshold: number,
+ *   longtouchThreshold: number,
+ *   angleThreshold: number,
+ *   scaleThreshold: number
+ * }} config 配置
  */
 class Data {
    /**
@@ -396,14 +402,15 @@ class Data {
    static outEventState = new EventState;
 
    /**
-    * @description 事件是否触发
-    * @type {Record<String, (ev: EventState, lev: EventState, tri: String) => Boolean>}
-    */
-   static condition = {};
-
-   /**
     * @description 配置
-    * @type {Record<String, Number>}
+    * @type {{
+    *   threshold: number,
+    *   swipeVelocityThreshold: number,
+    *   clickThreshold: number,
+    *   longtouchThreshold: number,
+    *   angleThreshold: number,
+    *   scaleThreshold: number
+    * }}
     * @constant
     * @member {Number} threshold 识别需要的最小位移
     */
@@ -809,9 +816,9 @@ class Public {
 
    /**
     * @description 注册事件监听器
-    * @param {HTMLElement} element 元素
-    * @param {EventType} type 事件类型
-    * @param {(eventState: EventState) => void} callback 回调函数
+    * @param {HTMLElement} element - 元素
+    * @param {EventType} type - 事件类型
+    * @param {(eventState: EventState) => void} callback - 回调函数
     * @returns {void}
     */
    static registerEventListener(element, type, callback) {
@@ -861,9 +868,9 @@ class Public {
 
    /**
     * @description 注销事件监听器
-    * @param {HTMLElement} element 元素
-    * @param {EventType} type 事件类型
-    * @param {Function} callback 回调函数
+    * @param {HTMLElement} element - 元素
+    * @param {EventType} type - 事件类型
+    * @param {(eventState: EventState) => void} callback - 回调函数
     * @returns {void}
     */
    static cancelEventListener(element, type, callback) {
@@ -902,8 +909,8 @@ class Public {
 
    /**
     * @description 设置事件触发条件
-    * @param {String} type - 事件类型
-    * @param {(ev: EventState, lev: EventState, tri: String) => Boolean} condition - 条件函数
+    * @param {EventType} type - 事件类型
+    * @param {(ev: EventState, lev: EventState, tri: TriggerType) => boolean} condition - 条件函数
     */
    static setCondition(type, condition) {
       if (eventConditions[type]) {
@@ -914,7 +921,7 @@ class Public {
 
    /**
     * @description 移除事件触发条件
-    * @param {String} type - 事件类型
+    * @param {EventType} type - 事件类型
     */
    static removeCondition(type) {
       if (eventConditions[type]) {
