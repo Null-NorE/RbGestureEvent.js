@@ -9,7 +9,7 @@ A modern web gesture event library that supports advanced gestures such as long 
 - **Support Multiple Gestures**: Such as long press, drag, pinch, rotate, etc.
 - **Consistent with DOM API**: Mimics the usage pattern of `addEventListener`.
 - **Cross-Platform Compatibility**: Provides consistent event handling logic for both PC and mobile.
-- **Modern Browser Support**: Compatible with Chrome 79+ and does not use advanced syntax like nullish coalescing operator.
+- **Modern Browser Support**: Compatible with Chrome **98+** ~~and does not use advanced syntax like nullish coalescing operator.~~ Loses meaning after using `Window：structuredClone()`
 - **Specific Optimization**: Currently a custom library for some projects, but also easy to integrate into other projects.
 
 ### **Supported Gesture List**
